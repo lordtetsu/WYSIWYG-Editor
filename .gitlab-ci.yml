@@ -1,0 +1,38 @@
+# CI doc-editor: tes + build di semua GitLab; publikasi docs/ ke Confluence hanya di proyek yang punya variabel CONFLUENCE_TOKEN.
+stages: [test, build, publish]
+
+default:
+  image: node:20-alpine
+  cache:
+    key:
+      files: [package-lock.json]
+    paths: [.npm/]
+  before_script:
+    - npm ci --cache .npm --prefer-offline --ignore-scripts
+
+test:
+  stage: test
+  script:
+    - npm test
+    - cd webserver && node --test # ekspor via Chrome otomatis dilewati bila Chrome tidak ada di image
+
+build:
+  stage: build
+  script:
+    - npm rebuild esbuild # --ignore-scripts di atas melewati unduhan biner esbuild
+    - npm run build
+  artifacts:
+    paths: [dist/]
+    expire_in: 30 days
+
+# Kirim docs/*.md ke Confluence (hanya file di folder docs). Aktif bila variabel CI/CD CONFLUENCE_TOKEN ada.
+# Variabel (Settings → CI/CD → Variables): CONFLUENCE_BASE_URL, CONFLUENCE_SPACE_KEY, CONFLUENCE_TOKEN (masked),
+#   CONFLUENCE_USER (email, untuk Confluence Cloud; kosongkan bila token = Personal Access Token Server/DC), CONFLUENCE_PARENT_ID
+publish-docs:
+  stage: publish
+  rules:
+    - if: '$CONFLUENCE_TOKEN && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+      changes: [docs/**/*]
+    - if: '$CONFLUENCE_TOKEN && $CI_PIPELINE_SOURCE == "web"' # jalankan manual dari Run pipeline
+  script:
+    - node scripts/publish-confluence.mjs

@@ -1,0 +1,14 @@
+{
+  "name": "doc-editor-ai-server",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Backend AI sederhana untuk doc-editor (tanpa dependensi)",
+  "type": "module",
+  "engines": {
+    "node": ">=20.12"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test"
+  }
+}

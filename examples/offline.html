@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Doc Editor Playground</title>
+  <style>
+    * { box-sizing: border-box }
+    [hidden] { display: none !important }
+    body { margin: 0; font: 14px/1.4 system-ui, sans-serif; color: #1a202c; background: #f4f5f7 }
+    .layout { display: grid; grid-template-columns: 320px 1fr; gap: 16px; padding: 16px; max-width: 1400px; margin: 0 auto }
+    @media (max-width: 800px) { .layout { grid-template-columns: 1fr } }
+    .panel { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 16px; min-width: 0 }
+    h1 { font-size: 18px; margin: 0 0 12px }
+    h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: #555; margin: 20px 0 8px }
+    label { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 6px 0 }
+    input[type=text], select, textarea { font: inherit; padding: 4px 6px; border: 1px solid #ccc; border-radius: 4px }
+    input[type=text], select { width: 150px }
+    #header, #footer, #aiEndpoint { width: 150px; font: 11px ui-monospace, monospace }
+    input[type=color] { width: 44px; height: 26px; padding: 0; border: 1px solid #ccc; border-radius: 4px }
+    textarea { width: 100%; min-height: 110px; font: 12px/1.4 ui-monospace, monospace }
+    #contentCss { min-height: 90px }
+    pre { margin: 0; padding: 8px; background: #f4f4f4; border-radius: 4px; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px; max-height: 260px; overflow: auto }
+    .error { color: #c53030; font-size: 12px; min-height: 1em }
+    button.small { font: inherit; padding: 4px 10px; border: 1px solid #ccc; border-radius: 4px; background: #fff; cursor: pointer }
+    .panel.fill-mode { display: flex; flex-direction: column; height: calc(100vh - 32px) }
+    .panel.fill-mode #saved { max-height: 120px }
+    .tb-group { border: 1px solid #e2e2e2; border-radius: 6px; padding: 6px 8px; margin: 6px 0 }
+    .tb-head { display: flex; align-items: center; gap: 6px; font-weight: 600 }
+    .tb-head label { margin: 0; flex: 1; justify-content: flex-start }
+    .tb-head button { font: inherit; width: 26px; height: 24px; border: 1px solid #ccc; border-radius: 4px; background: #fff; cursor: pointer }
+    .tb-head button:disabled { opacity: .3; cursor: default }
+    .tb-items { display: flex; flex-wrap: wrap; gap: 2px 10px; margin-top: 4px; font-size: 12px }
+    .tb-items label { margin: 0; justify-content: flex-start; gap: 4px }
+    .tb-items .sub { padding-left: 14px; width: 100% }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside class="panel" aria-label="Konfigurasi">
+      <h1>Konfigurasi</h1>
+
+      <label><span>Bahasa (<code>lang</code>)</span>
+        <select id="lang"><option value="id">Indonesia</option><option value="en">English</option></select>
+      </label>
+      <label><span>Nama file ekspor</span> <input id="fileName" type="text" value="dokumen"></label>
+      <label><span>Tombol Simpan (<code>onSave</code>)</span> <input id="onSave" type="checkbox" checked></label>
+
+      <h2>Tampilan editor</h2>
+      <label><span>Tema (<code>theme</code>)</span>
+        <select id="themeMode"><option value="light">Terang</option><option value="dark">Gelap</option><option value="auto">Ikut perangkat</option><option value="inherit">Ikut template aplikasi</option></select>
+      </label>
+      <label><span>Kepadatan (<code>density</code>)</span>
+        <select id="density"><option value="normal">Normal</option><option value="compact">Ringkas</option><option value="comfortable">Lega</option></select>
+      </label>
+      <label><span>Menubar</span> <input id="menubar" type="checkbox" checked></label>
+      <label><span>Status bar</span> <input id="statusbar" type="checkbox" checked></label>
+      <label><span>Izinkan ekspor (<code>allowExport</code>)</span> <input id="allowExport" type="checkbox" checked></label>
+      <small>Matikan ekspor bila dokumen hanya boleh diekspor lewat server (lihat <code>webserver/</code>).</small>
+
+      <h2>CSS tampilan dokumen (<code>contentCss</code>)</h2>
+      <textarea id="contentCss" spellcheck="false" placeholder="mis. h1 { color: #1f4e79; text-transform: uppercase; }"></textarea>
+      <button class="small" type="button" id="sampleCss">Contoh: laporan resmi</button>
+      <small>Berlaku di editor, pratinjau, cetak/PDF, dan HTML. Bisa juga lewat menu Berkas → Impor CSS tampilan.</small>
+
+      <h2>AI (<code>ai</code>)</h2>
+      <label><span>Endpoint backend</span> <input id="aiEndpoint" type="text" value="http://localhost:8787/api/ai"></label>
+      <small>Jalankan <code>webserver/</code> lalu blok teks di editor → klik kanan → <b>Interaction with AI</b>. Kosongkan endpoint untuk mematikan.</small>
+
+      <h2>Tinggi (<code>height</code>)</h2>
+      <label><span>Mode</span>
+        <select id="heightMode">
+          <option value="auto">Ikut isi (otomatis)</option>
+          <option value="fixed">Tetap (px)</option>
+          <option value="screen">Ikut tinggi layar</option>
+          <option value="fill">Ikut tinggi panel (fill)</option>
+        </select>
+      </label>
+      <label id="heightValueLabel" hidden><span id="heightValueText">Tinggi (px)</span> <input id="heightValue" type="number" min="0" step="10" style="width:90px"></label>
+
+      <h2>Toolbar (<code>toolbar</code>)</h2>
+      <small>Centang = tampil. ↑/↓ = urutan kelompok.</small>
+      <div id="toolbarConfig"></div>
+      <button class="small" type="button" id="resetToolbar">Reset toolbar</button>
+
+      <h2>Kertas (<code>page</code>)</h2>
+      <label><span>Ukuran</span><select id="paper"></select></label>
+      <label><span>Orientasi</span><select id="orientation"><option value="portrait">Potret</option><option value="landscape">Lanskap</option></select></label>
+      <label id="paperW" hidden><span>Lebar (mm)</span> <input id="paperWidth" type="number" min="50" value="210" style="width:90px"></label>
+      <label id="paperH" hidden><span>Tinggi (mm)</span> <input id="paperHeight" type="number" min="50" value="297" style="width:90px"></label>
+      <label><span>Margin atas (mm)</span> <input id="mTop" type="number" min="0" value="20" style="width:90px"></label>
+      <label><span>Margin kanan (mm)</span> <input id="mRight" type="number" min="0" value="20" style="width:90px"></label>
+      <label><span>Margin bawah (mm)</span> <input id="mBottom" type="number" min="0" value="20" style="width:90px"></label>
+      <label><span>Margin kiri (mm)</span> <input id="mLeft" type="number" min="0" value="20" style="width:90px"></label>
+      <label><span>Header (HTML)</span> <input id="header" type="text" value="&lt;p style=&quot;text-align: center&quot;&gt;&lt;strong&gt;NAMA INSTANSI&lt;/strong&gt;&lt;/p&gt;"></label>
+      <label><span>Footer (HTML)</span> <input id="footer" type="text" value="&lt;p style=&quot;text-align: right&quot;&gt;Halaman {page} dari {pages}&lt;/p&gt;"></label>
+      <label><span>Watermark</span> <input id="wmText" type="text" placeholder="mis. RAHASIA"></label>
+      <small>Berlaku untuk Cetak, PDF, HTML, dan Word. Bisa juga diubah dari tombol 🖨 Cetak (header/footer: klik langsung di halaman) dan 💧 Watermark.</small>
+
+      <h2>Warna (<code>theme</code>)</h2>
+      <div id="theme"></div>
+      <button class="small" type="button" id="resetTheme">Reset warna</button>
+
+      <h2>Label (<code>labels</code>, JSON)</h2>
+      <textarea id="labels" spellcheck="false">{
+  "bold": { "title": "Tebalkan teks" },
+  "exportDocx": { "label": "DOCX" }
+}</textarea>
+      <div class="error" id="labelsError" role="alert"></div>
+      <small>Daftar semua kunci: <code>console.log(DocEditor.LOCALES)</code></small>
+
+      <h2>Kode untuk aplikasi Anda</h2>
+      <pre id="code"></pre>
+    </aside>
+
+    <main class="panel" aria-label="Pratinjau">
+      <h1>Pratinjau</h1>
+      <div id="editor"></div>
+      <h2>Hasil <code>onSave</code>: paket dokumen untuk disimpan di server</h2>
+      <pre id="saved">(klik Simpan atau tekan Ctrl/Cmd+S)</pre>
+    </main>
+  </div>
+
+  <!-- Satu-satunya file yang perlu disalin ke aplikasi Anda -->
+  <script src="../dist/doc-editor.umd.js"></script>
+  <!-- Opsional: impor PDF (teks). Hapus baris ini bila tidak perlu. -->
+  <script src="../dist/doc-editor-pdf.umd.js"></script>
+  <script>
+    // Default sama dengan bawaan library; hanya warna yang diubah yang masuk ke `theme`.
+    const THEME_DEFAULTS = {
+      toolbarBg: '#fafafa', toolbarColor: '#222222', hoverBg: '#eaeaea', activeBg: '#dde7ff',
+      activeBorder: '#9bb5f5', activeColor: '#1a2b5c', accent: '#3b6fe0', bg: '#ffffff', color: '#111111', border: '#cccccc',
+    }
+    const $ = (id) => document.getElementById(id)
+
+    for (const [key, value] of Object.entries(THEME_DEFAULTS)) {
+      const label = document.createElement('label')
+      const input = Object.assign(document.createElement('input'), { type: 'color', value })
+      input.dataset.key = key
+      label.append(key, input)
+      $('theme').append(label)
+    }
+
+    // auto -> tanpa height; fixed -> angka px; screen -> calc(100vh - N px), ikut berubah saat jendela di-resize
+    const HEIGHT_UI = {
+      fixed: { text: 'Tinggi (px)', value: 400 },
+      screen: { text: 'Dikurangi (px) untuk header dll.', value: 220 },
+    }
+    let lastMode = 'auto'
+    function readHeight() {
+      const mode = $('heightMode').value
+      const ui = HEIGHT_UI[mode]
+      $('heightValueLabel').hidden = !ui
+      $('editor').closest('.panel').classList.toggle('fill-mode', mode === 'fill')
+      if (mode === 'fill') return 'fill'
+      if (!ui) return undefined
+      if (mode !== lastMode) $('heightValue').value = ui.value
+      lastMode = mode
+      $('heightValueText').textContent = ui.text
+      const n = Math.max(0, Number($('heightValue').value) || 0)
+      return mode === 'fixed' ? Math.max(n, 150) : `calc(100vh - ${n}px)`
+    }
+
+    for (const [name, [w, h]] of Object.entries(DocEditor.PAPER)) $('paper').append(new Option(`${name} (${w} × ${h} mm)`, name))
+    $('paper').append(new Option('Kustom', 'custom'))
+
+    // Hanya yang berbeda dari default (A4, margin 20mm) yang ditulis ke `page`.
+    function readPage() {
+      const custom = $('paper').value === 'custom'
+      $('paperW').hidden = $('paperH').hidden = !custom
+      const page = {}
+      if (custom) page.size = { width: +$('paperWidth').value, height: +$('paperHeight').value }
+      else if ($('paper').value !== 'A4') page.size = $('paper').value
+      if ($('orientation').value === 'landscape') page.orientation = 'landscape'
+      const m = { top: +$('mTop').value, right: +$('mRight').value, bottom: +$('mBottom').value, left: +$('mLeft').value }
+      const values = Object.values(m)
+      if (values.some((v) => v !== 20)) page.margin = values.every((v) => v === values[0]) ? values[0] : m
+      if ($('header').value.trim()) page.header = $('header').value
+      if ($('footer').value.trim()) page.footer = $('footer').value
+      if ($('wmText').value.trim()) page.watermark = { text: $('wmText').value }
+      return Object.keys(page).length ? page : undefined
+    }
+
+    // --- Toolbar: urutan kelompok & tombol yang disembunyikan ---
+    const ID = DocEditor.LOCALES.id
+    let groupOrder = [...DocEditor.DEFAULT_GROUP_ORDER]
+    const hidden = new Set()
+    const check = (name, text, cls = '') => {
+      const label = Object.assign(document.createElement('label'), { className: cls })
+      const box = Object.assign(document.createElement('input'), { type: 'checkbox', checked: !hidden.has(name) })
+      box.onchange = () => { box.checked ? hidden.delete(name) : hidden.add(name); drawToolbarConfig() }
+      label.append(box, text)
+      return label
+    }
+    function drawToolbarConfig() {
+      const root = $('toolbarConfig')
+      root.replaceChildren()
+      groupOrder.forEach((g, i) => {
+        const box = Object.assign(document.createElement('div'), { className: 'tb-group' })
+        const head = Object.assign(document.createElement('div'), { className: 'tb-head' })
+        const move = (d, symbol, title) => {
+          const b = Object.assign(document.createElement('button'), { type: 'button', textContent: symbol, title, disabled: !groupOrder[i + d] })
+          b.onclick = () => { [groupOrder[i], groupOrder[i + d]] = [groupOrder[i + d], groupOrder[i]]; drawToolbarConfig(); render() }
+          return b
+        }
+        head.append(check(g, ID.groups[g]), move(-1, '↑', 'Naikkan'), move(1, '↓', 'Turunkan'))
+        const items = Object.assign(document.createElement('div'), { className: 'tb-items' })
+        items.hidden = hidden.has(g)
+        for (const key of DocEditor.TOOLBAR_GROUPS[g]) {
+          items.append(check(key, ID[key].title))
+          for (const sub of DocEditor.TOOLBAR_MENUS[key] ?? []) items.append(check(sub, ID[sub].label, 'sub'))
+        }
+        box.append(head, items)
+        root.append(box)
+      })
+    }
+    function readToolbar() {
+      const t = {}
+      if (groupOrder.join() !== DocEditor.DEFAULT_GROUP_ORDER.join()) t.order = groupOrder
+      if (hidden.size) t.hide = [...hidden]
+      return Object.keys(t).length ? t : undefined
+    }
+    drawToolbarConfig()
+    $('sampleCss').onclick = () => {
+      $('contentCss').value = `body { font-family: Georgia, 'Times New Roman', serif; color: #1f2933; }
+h1 { color: #1f4e79; text-align: center; text-transform: uppercase; letter-spacing: 1px; }
+h2 { color: #1f4e79; border-bottom: 2px solid #1f4e79; padding-bottom: 2pt; }
+table th { background: #1f4e79; color: #fff; }
+blockquote { border-left-color: #c58b00; background: #fff8e5; }`
+      render()
+    }
+    $('resetToolbar').onclick = () => { groupOrder = [...DocEditor.DEFAULT_GROUP_ORDER]; hidden.clear(); drawToolbarConfig(); render() }
+
+    function readAi() {
+      const endpoint = $('aiEndpoint').value.trim()
+      if (!endpoint) return undefined
+      return { endpoint } // hanya URL webserver; tidak ada token di browser
+    }
+
+    function readConfig() {
+      const theme = {}
+      for (const input of $('theme').querySelectorAll('input')) {
+        if (input.value !== THEME_DEFAULTS[input.dataset.key]) theme[input.dataset.key] = input.value
+      }
+      let labels = {}
+      $('labelsError').textContent = ''
+      try {
+        labels = JSON.parse($('labels').value || '{}')
+      } catch (e) {
+        $('labelsError').textContent = 'JSON tidak valid: ' + e.message
+      }
+      return { lang: $('lang').value, fileName: $('fileName').value || 'dokumen', onSave: $('onSave').checked, theme, labels, height: readHeight(), page: readPage(), toolbar: readToolbar(), ai: readAi(),
+        themeMode: $('themeMode').value, density: $('density').value, menubar: $('menubar').checked, statusbar: $('statusbar').checked,
+        allowExport: $('allowExport').checked, contentCss: $('contentCss').value.trim() }
+    }
+
+    function showCode(c) {
+      const opts = { lang: c.lang, fileName: c.fileName }
+      if (c.height !== undefined) opts.height = c.height
+      if (c.page !== undefined) opts.page = c.page
+      if (c.toolbar !== undefined) opts.toolbar = c.toolbar
+      if (c.ai !== undefined) opts.ai = c.ai
+      if (c.themeMode !== 'light') opts.theme = Object.keys(c.theme).length ? { preset: c.themeMode, ...c.theme } : c.themeMode
+      else if (Object.keys(c.theme).length) opts.theme = c.theme
+      if (c.density !== 'normal') opts.density = c.density
+      if (!c.menubar) opts.menubar = false
+      if (!c.statusbar) opts.statusbar = false
+      if (!c.allowExport) opts.allowExport = false
+      if (c.contentCss) opts.contentCss = c.contentCss
+      if (Object.keys(c.labels).length) opts.labels = c.labels
+      const body = JSON.stringify(opts, null, 2).slice(0, -2) // buang "\n}" untuk menyisipkan onSave
+      $('code').textContent =
+        '<script src="doc-editor.umd.js"><\/script>\n<!-- opsional, impor PDF: <script src="doc-editor-pdf.umd.js"><\/script> -->\n<script>\nlet hasil = null\nconst ed = DocEditor.create(\'#editor\', ' +
+        body + (c.onSave ? ',\n  "onSave": (html, api, doc) => { hasil = doc /* simpan ke server */ }' : '') + '\n})\n<\/script>'
+    }
+
+    let hasil = null
+    let ed = null
+    let content = '<h1 style="text-align: center">Contoh Dokumen</h1><p>Ubah konfigurasi di panel kiri, isi dokumen ini tetap dipertahankan.</p><table><tr><th>Nama</th><th>Nilai</th></tr><tr><td>Andi</td><td style="vertical-align: middle">90</td></tr></table>'
+
+    function render() {
+      const c = readConfig()
+      if (ed) {
+        content = ed.getHTML()
+        ed.destroy()
+      }
+      ed = DocEditor.create('#editor', {
+        content,
+        lang: c.lang,
+        fileName: c.fileName,
+        labels: c.labels,
+        height: c.height,
+        page: c.page,
+        toolbar: c.toolbar,
+        ai: c.ai,
+        // Paket dokumen (isi + semua pengaturan) -> simpan di server, ekspor lewat webserver/ hasilnya sama dengan pratinjau.
+        onSave: c.onSave ? (html, api, doc) => { hasil = doc; $('saved').textContent = JSON.stringify(doc, null, 2) } : undefined,
+        theme: c.themeMode === 'light' && !Object.keys(c.theme).length ? 'light' : c.themeMode === 'light' ? c.theme : Object.keys(c.theme).length ? { preset: c.themeMode, ...c.theme } : c.themeMode,
+        density: c.density,
+        menubar: c.menubar,
+        statusbar: c.statusbar,
+        allowExport: c.allowExport,
+        contentCss: c.contentCss || undefined,
+      })
+      showCode(c)
+    }
+
+    let timer
+    const rerender = () => { clearTimeout(timer); timer = setTimeout(render, 150) }
+    document.querySelector('aside').addEventListener('input', rerender)
+    $('resetTheme').onclick = () => {
+      for (const input of $('theme').querySelectorAll('input')) input.value = THEME_DEFAULTS[input.dataset.key]
+      render()
+    }
+    render()
+  </script>
+</body>
+</html>
