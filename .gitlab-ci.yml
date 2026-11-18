@@ -1,4 +1,9 @@
-# CI doc-editor: tes + build di semua GitLab; publikasi docs/ ke Confluence hanya di proyek yang punya variabel CONFLUENCE_TOKEN.
+# CI doc-editor: tes, build, dan publikasi docs/ ke Confluence.
+# Pipeline hanya berjalan di GitLab opqrs; di gitlab.com tidak ada pipeline sama sekali.
+workflow:
+  rules:
+    - if: '$CI_SERVER_HOST == "gitlab.opqrs.xyz"'
+
 stages: [test, build, publish]
 
 default:
@@ -12,7 +17,11 @@ default:
 
 test:
   stage: test
+  variables:
+    GIT_DEPTH: "0" # riwayat lengkap untuk cek CHANGELOG
   script:
+    - apk add --no-cache git >/dev/null
+    - node scripts/changelog.mjs --check
     - npm test
     - cd webserver && node --test # ekspor via Chrome otomatis dilewati bila Chrome tidak ada di image
 
@@ -25,14 +34,14 @@ build:
     paths: [dist/]
     expire_in: 30 days
 
-# Kirim docs/*.md ke Confluence (hanya file di folder docs). Aktif bila variabel CI/CD CONFLUENCE_TOKEN ada.
+# Kirim docs/*.md ke Confluence (hanya file di folder docs) saat ada perubahan docs/ di branch utama, atau manual (Run pipeline).
 # Variabel (Settings → CI/CD → Variables): CONFLUENCE_BASE_URL, CONFLUENCE_SPACE_KEY, CONFLUENCE_TOKEN (masked),
 #   CONFLUENCE_USER (email, untuk Confluence Cloud; kosongkan bila token = Personal Access Token Server/DC), CONFLUENCE_PARENT_ID
 publish-docs:
   stage: publish
   rules:
-    - if: '$CONFLUENCE_TOKEN && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
       changes: [docs/**/*]
-    - if: '$CONFLUENCE_TOKEN && $CI_PIPELINE_SOURCE == "web"' # jalankan manual dari Run pipeline
+    - if: '$CI_PIPELINE_SOURCE == "web"' # jalankan manual dari Run pipeline
   script:
     - node scripts/publish-confluence.mjs

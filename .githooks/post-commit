@@ -1,0 +1,10 @@
+#!/bin/sh
+# Perbarui CHANGELOG.md dari riwayat git dan masukkan ke commit yang baru dibuat (amend, tanpa commit tambahan).
+# Aktif lewat: git config core.hooksPath .githooks (otomatis saat npm install).
+[ -n "$DE_CHANGELOG_AMEND" ] && exit 0
+# Jangan ubah commit saat rebase/cherry-pick berlangsung.
+for d in rebase-merge rebase-apply CHERRY_PICK_HEAD; do [ -e "$(git rev-parse --git-path $d)" ] && exit 0; done
+node scripts/changelog.mjs || { echo "CHANGELOG.md gagal diperbarui" >&2; exit 0; }
+[ -z "$(git status --porcelain -- CHANGELOG.md)" ] && exit 0
+git add CHANGELOG.md
+DE_CHANGELOG_AMEND=1 git commit --amend --no-edit --no-verify -q
