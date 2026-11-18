@@ -31,6 +31,8 @@ Versi library: 0.1.0 · Dokumen ini berlaku untuk kode di repositori ini per Nov
 
 ---
 
+> **Pindah dari TinyMCE?** Kode `tinymce.init({...})` yang sudah ada bisa langsung dipakai. Lihat [MIGRASI-TINYMCE.md](MIGRASI-TINYMCE.md).
+
 ## 1. Gambaran umum
 
 ```
@@ -202,7 +204,7 @@ Versi `<script>` mendaftarkan dirinya otomatis ke `window.DocEditor`.
 | `density` | `'normal'` | `'compact'`, `'normal'`, `'comfortable'` (ukuran tombol) |
 | `height` | kosong | Kosong = ikut isi; angka = px; string CSS (`'60vh'`, `'calc(100vh - 200px)'`); `'fill'` = mengisi wadah |
 | `toolbar` | `{}` | `{ order: [kelompok…], hide: [kunci…] }` (bagian 7) |
-| `menubar` | `true` | Tampilkan menubar |
+| `menubar` | `true` | `true`/`false`, atau daftar menu yang tampil: `['file', 'edit', 'insert', …]` |
 | `statusbar` | `true` | Tampilkan status bar (jalur elemen & jumlah kata) |
 | `fonts` | `DEFAULT_FONTS` | Daftar CSS `font-family` di pilihan jenis huruf |
 | `mergeTags` | `[]` | `[{ value, label }]` → disisipkan sebagai `{{value}}` |
@@ -211,6 +213,10 @@ Versi `<script>` mendaftarkan dirinya otomatis ke `window.DocEditor`.
 | `autosave` | `false` | `true` atau string kunci → draf disimpan di `localStorage` |
 | `spellcheck` | `true` | Pemeriksa ejaan bawaan browser |
 | `allowExport` | `true` | `false` = tombol ekspor & cetak disembunyikan, fungsi ekspor menolak (ekspor lewat server) |
+| `placeholder` | – | Teks samar saat dokumen kosong |
+| `readonly` | `false` | Mode baca-saja (tombol pengubah isi nonaktif). Ubah kemudian dengan `setReadOnly()` |
+| `fontSizes` | 8–72 | Daftar ukuran huruf (pt) di pilihan ukuran dan tombol A−/A+ |
+| `imageUpload` | – | `async (file) => url`: gambar diunggah ke server Anda. Tanpa opsi ini, gambar disimpan sebagai data URL |
 
 ## 6. API instance
 
@@ -263,7 +269,7 @@ Saat `allowExport: false`, semua metode ekspor mengembalikan `false` dan menulis
 
 ### Mode tampilan
 
-`toggleCode()`, `isCodeView()`, `toggleFullscreen()`, `toggleSpellcheck()`, `setSpellLanguage('id'|'en')`, `togglePasteAsText()`, `toggleInvisibles()`, `toggleBlocks()`, `toggleFormatPainter()`.
+`setReadOnly(bool)`, `isReadOnly()`, `toggleCode()`, `isCodeView()`, `toggleFullscreen()`, `toggleSpellcheck()`, `setSpellLanguage('id'|'en')`, `togglePasteAsText()`, `toggleInvisibles()`, `toggleBlocks()`, `toggleFormatPainter()`.
 
 ### AI
 
@@ -271,11 +277,11 @@ Saat `allowExport: false`, semua metode ekspor mengembalikan `false` dan menulis
 
 ### Lainnya
 
-`save()` (memanggil `onSave`), `destroy()`, `editor` (instance Tiptap, untuk kebutuhan lanjutan).
+`save()` (memanggil `onSave`), `runTool(nama)` (jalankan tombol toolbar mana pun, termasuk tombol kustom), `pickImageSrc()`, `destroy()`, `editor` (instance Tiptap, untuk kebutuhan lanjutan).
 
 ### Ekspor statis modul
 
-`create`, `TOOLBAR_GROUPS`, `TOOLBAR_MENUS`, `DEFAULT_GROUP_ORDER`, `DEFAULT_FONTS`, `LOCALES`, `PAPER`, `registerImporter`, `buildDocx`.
+`create`, `tinymce` (API bergaya TinyMCE, lihat [Migrasi dari TinyMCE](MIGRASI-TINYMCE.md)), `TOOLBAR_GROUPS`, `TOOLBAR_MENUS`, `DEFAULT_GROUP_ORDER`, `DEFAULT_FONTS`, `LOCALES`, `PAPER`, `registerImporter`, `buildDocx`.
 
 ## 7. Toolbar, menubar, status bar
 
@@ -310,6 +316,19 @@ DocEditor.create('#editor', {
     hide: ['view', 'strike', 'exportHtml', 'emoji'],  // kelompok, tombol, atau isi dropdown
   },
 })
+```
+
+Susunan sendiri (kelompok bebas, termasuk tombol kustom):
+
+```js
+toolbar: {
+  groups: [['undo', 'redo'], ['bold', 'italic', 'ttd'], ['table', 'print']],
+  buttons: {
+    ttd: { text: 'Tanda tangan', tooltip: 'Sisipkan blok tanda tangan', icon: '<svg …>…</svg>',
+           onAction: (ed) => ed.editor.chain().focus().insertContent('<p>Hormat kami,</p>').run(),
+           isActive: (ed) => false },
+  },
+}
 ```
 
 Nama yang salah ketik diabaikan dengan peringatan di konsol.

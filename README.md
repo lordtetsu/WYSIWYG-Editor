@@ -10,6 +10,7 @@ Hasil build berupa **satu file JS** (CSS sudah termasuk) yang tidak memanggil CD
 - Contoh & konfigurator: [examples/offline.html](examples/offline.html). Jalankan `npm run build`, lalu buka file itu di browser.
 - Server AI & ekspor dari backend: [webserver/](webserver/README.md)
 - **Dokumentasi teknis lengkap** (pemasangan per stack, semua opsi & API, server, keamanan, pemecahan masalah): [docs/DOKUMENTASI-TEKNIS.md](docs/DOKUMENTASI-TEKNIS.md)
+- **Migrasi dari TinyMCE** (opsi, nama tombol, API, peristiwa, perbedaan): [docs/MIGRASI-TINYMCE.md](docs/MIGRASI-TINYMCE.md)
 - **Laporan riset** (latar belakang, pemilihan teknologi, hasil uji, keamanan, rekomendasi): [docs/LAPORAN-RISET.md](docs/LAPORAN-RISET.md)
 
 ```bash
@@ -27,6 +28,21 @@ Prasyarat: Node.js 20.12+. Ekspor dari backend juga memerlukan Chrome/Chromium d
 |---|---|
 | `dist/doc-editor.umd.js` / `dist/doc-editor.js` | ± 496 KB |
 | `dist/doc-editor-pdf.umd.js` / `dist/doc-editor-pdf.js` (opsional) | ± 517 KB |
+
+## Pindah dari TinyMCE
+
+Kode TinyMCE yang sudah ada bisa langsung dipakai: ganti `<script src="tinymce.min.js">` dengan `doc-editor.umd.js`, atau `import tinymce from 'tinymce'` dengan `import { tinymce } from 'doc-editor'`.
+
+```js
+tinymce.init({
+  selector: '#isi',
+  toolbar: 'undo redo | blocks | bold italic | alignleft aligncenter | bullist numlist | link image table | code',
+  height: 500,
+  setup: (editor) => editor.on('change', () => console.log(editor.getContent())),
+})
+```
+
+Opsi, tombol, API, dan peristiwa yang didukung ada di [docs/MIGRASI-TINYMCE.md](docs/MIGRASI-TINYMCE.md). Yang belum didukung disebut di konsol browser.
 
 ## Pemakaian
 
@@ -58,8 +74,11 @@ Contoh lengkap per stack ada di [dokumentasi teknis](docs/DOKUMENTASI-TEKNIS.md#
 | `theme` | `'light'` / `'dark'` / `'auto'` / `'inherit'` (ikut huruf & warna template aplikasi, termasuk `--bs-primary`), atau objek warna |
 | `density` | `'compact'` / `'normal'` / `'comfortable'` |
 | `height` | Kosong = ikut isi; angka px; `'calc(100vh - 200px)'`; `'fill'` = mengisi panel |
-| `toolbar` | `{ order: [kelompok…], hide: [tombol/kelompok/isi menu…] }`; lihat `DocEditor.TOOLBAR_GROUPS` & `TOOLBAR_MENUS` |
-| `menubar`, `statusbar` | Menu Berkas/Edit/… dan baris status (default tampil) |
+| `toolbar` | `{ order: [kelompok…], hide: [tombol/kelompok/isi menu…] }`, atau susunan sendiri `{ groups: [['bold','italic'], …], buttons: { nama: { text, icon, onAction } } }`; lihat `DocEditor.TOOLBAR_GROUPS` & `TOOLBAR_MENUS` |
+| `menubar`, `statusbar` | Menu Berkas/Edit/… (atau daftar menu: `['file', 'edit']`) dan baris status (default tampil) |
+| `placeholder`, `readonly` | Teks samar saat kosong; mode baca-saja (`ed.setReadOnly()`) |
+| `fontSizes` | Daftar ukuran huruf (pt) |
+| `imageUpload` | `async (file) => url`: unggah gambar ke server Anda (default: data URL di dokumen) |
 | `fonts` | Daftar pilihan jenis huruf |
 | `mergeTags` | `[{ value, label }]` → disisipkan sebagai `{{value}}` |
 | `templates` | `[{ title, html, page? }]`; template bisa membawa pengaturan halamannya sendiri |

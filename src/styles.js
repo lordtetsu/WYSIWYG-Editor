@@ -46,7 +46,7 @@ export const CONTENT_CSS = `
 
 // Warna UI lewat variabel CSS --de-* (opsi `theme` atau CSS Anda sendiri); nilai setelah koma adalah default.
 export const UI_CSS = `
-.de{border:1px solid var(--de-border,#ccc);border-radius:6px;background:var(--de-bg,#fff);color:var(--de-color,#111)}
+.de{box-sizing:border-box;border:1px solid var(--de-border,#ccc);border-radius:6px;background:var(--de-bg,#fff);color:var(--de-color,#111)}
 .de-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:4px 0;padding:6px 8px;border-bottom:1px solid var(--de-border,#ccc);background:var(--de-toolbar-bg,#fafafa);position:sticky;top:0;z-index:1;border-radius:6px 6px 0 0;font:500 13px/1 var(--de-ui-font,system-ui,sans-serif)}
 .de-toolbar button{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:var(--de-btn,32px);height:var(--de-btn,32px);padding:0 7px;border:1px solid transparent;border-radius:6px;background:none;color:var(--de-toolbar-color,#222);font:inherit;line-height:1;cursor:pointer;white-space:nowrap}
 .de-toolbar button svg{flex:none}
@@ -196,6 +196,7 @@ html.de-noscroll{overflow:hidden}
 .de .de-content .de-toc-text::after{content:none}
 .de .de-content .de-toc.ProseMirror-selectednode{outline:2px solid var(--de-accent,#3b6fe0)}
 .de .ProseMirror{counter-reset:de-fn}
+.de .ProseMirror p.is-editor-empty:first-child::before{content:attr(data-placeholder);float:left;height:0;pointer-events:none;color:#8a94a6}
 .de .ProseMirror sup.de-fn::after{counter-increment:de-fn;content:counter(de-fn)}
 .de .ProseMirror sup.de-fn{color:var(--de-accent,#3b6fe0);cursor:pointer;padding:0 1px}
 .de .de-content .de-math{cursor:pointer}

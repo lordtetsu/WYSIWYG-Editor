@@ -6,6 +6,7 @@ import { TableKit, TableCell, TableHeader } from '@tiptap/extension-table'
 import { TextStyleKit } from '@tiptap/extension-text-style'
 import { TaskList, TaskItem } from '@tiptap/extension-list'
 import { Superscript } from '@tiptap/extension-superscript'
+import { Placeholder } from '@tiptap/extensions'
 import { Subscript } from '@tiptap/extension-subscript'
 import { Packer } from 'docx'
 import { EditorView, basicSetup } from 'codemirror'
@@ -18,6 +19,7 @@ import { LOCALES, resolveText } from './locales.js'
 import { PAPER, normalizePage } from './page.js'
 import { openPrintPreview, printPaged, pagedHtml, pageStarts, withEndnotes } from './print.js'
 import { MathNode, Footnote, Video, renderMath, videoSrc } from './media.js'
+import { makeTinymce } from './tinymce.js'
 import { watermarkSvg, watermarkDataUrl, watermarkPng, watermarkFields } from './watermark.js'
 import { registerImporter, hasImporter, importAccept, fileToHtml, extensionOf, textToHtml } from './importers.js'
 import { setupAi } from './ai.js'
@@ -73,9 +75,9 @@ const GROUPS = {
   font: [
     ['blockType', 'select'],
     ['fontFamily', 'select'],
-    ['fontSizeDown', (e) => stepFontSize(e, -1)],
+    ['fontSizeDown', (e, api) => stepFontSize(e, -1, api.fontSizes)],
     ['fontSize', 'select'],
-    ['fontSizeUp', (e) => stepFontSize(e, 1)],
+    ['fontSizeUp', (e, api) => stepFontSize(e, 1, api.fontSizes)],
   ],
   style: [
     ['bold', (e) => e.chain().focus().toggleBold().run(), 'bold'],
@@ -109,7 +111,7 @@ const GROUPS = {
   ],
   insert: [
     ['link', editLink, 'link'],
-    ['image', async (e) => e.chain().focus().setImage({ src: await pickImage() }).run()],
+    ['image', async (e, api) => { const src = await api.pickImageSrc(); if (src) e.chain().focus().setImage({ src }).run() }],
     ['imageCrop', (e, api, button) => api.cropImage(button)],
     ['table', (e, api, button) => api.openMenu(button, TABLE_ITEMS), (e) => e.isActive('table'), false, true],
     ['horizontalRule', (e) => e.chain().focus().setHorizontalRule().run()],
@@ -166,10 +168,10 @@ function indentBlocks(e, dir) {
 }
 const setDirection = (e, dir) => setBlockAttr(e, 'dir', dir)
 // Ukuran huruf naik/turun ke ukuran berikutnya di daftar (px dari file impor dihitung sebagai pt).
-function stepFontSize(e, dir) {
+function stepFontSize(e, dir, sizes = FONT_SIZES) {
   const raw = e.getAttributes('textStyle').fontSize ?? '11pt'
   const pt = /px$/.test(raw) ? (parseFloat(raw) * 72) / 96 : parseFloat(raw) || 11
-  const next = dir > 0 ? FONT_SIZES.find((n) => n > pt + 0.1) : [...FONT_SIZES].reverse().find((n) => n < pt - 0.1)
+  const next = dir > 0 ? sizes.find((n) => n > pt + 0.1) : [...sizes].reverse().find((n) => n < pt - 0.1)
   return next ? e.chain().focus().setFontSize(`${next}pt`).run() : false
 }
 const CASE_ITEMS = ['caseUpper', 'caseLower', 'caseTitle', 'caseSentence'].map((key) => [key, (api) => changeCase(api.editor, key.slice(4).toLowerCase())])
@@ -198,7 +200,7 @@ const CONTROLS = {
     apply: (e, v) => setBlockAttr(e, 'lineHeight', v || null),
   },
   fontSize: {
-    options: (t) => [['', t.sizeDefault], ...FONT_SIZES.map((n) => [`${n}pt`, String(n)])],
+    options: (t, fonts, sizes = FONT_SIZES) => [['', t.sizeDefault], ...sizes.map((n) => [`${n}pt`, String(n)])],
     read: (e) => e.getAttributes('textStyle').fontSize ?? '',
     apply: (e, v) => (v ? e.chain().focus().setFontSize(v).run() : e.chain().focus().unsetFontSize().run()),
     labelOf: (v) => v.replace(/pt$/, ''),
@@ -277,8 +279,6 @@ const readDataUrl = (file) => new Promise((resolve, reject) => {
   r.onerror = reject
   r.readAsDataURL(file)
 })
-// Gambar disimpan sebagai data URL agar tetap offline & ikut tersimpan bersama HTML.
-const pickImage = async () => readDataUrl(await pickFile('image/*'))
 // Video yang diunggah ikut tersimpan di dokumen (data URL), jadi dibatasi; video besar sebaiknya lewat URL.
 const VIDEO_MAX_MB = 25
 const MATH_SNIPPETS = [['a/b', '\\frac{a}{b}'], ['x²', 'x^{2}'], ['xᵢ', 'x_{i}'], ['√', '\\sqrt{x}'], ['ⁿ√', '\\sqrt[n]{x}'],
@@ -368,8 +368,9 @@ function injectCss() {
  * @param {string|object} [options.theme]  'light' | 'dark' | 'auto' | 'inherit' (ikut template aplikasi) atau warna:
  *        { preset?, bg, color, border, toolbarBg, toolbarColor, hoverBg, activeBg, activeBorder, activeColor, accent, uiFont }
  */
-export function create(target, { content, fileName = 'dokumen', onChange, onSave, lang = 'id', labels, theme = 'light', height, page, toolbar: toolbarOptions = {}, fonts = DEFAULT_FONTS, ai, mergeTags = [], templates = [], spellcheck = true, menubar = true, statusbar = true, autosave = false, density = 'normal', contentCss, allowExport = true } = {}) {
+export function create(target, { content, fileName = 'dokumen', onChange, onSave, lang = 'id', labels, theme = 'light', height, page, toolbar: toolbarOptions = {}, fonts = DEFAULT_FONTS, ai, mergeTags = [], templates = [], spellcheck = true, menubar = true, statusbar = true, autosave = false, density = 'normal', contentCss, allowExport = true, placeholder, readonly = false, fontSizes, imageUpload } = {}) {
   injectCss()
+  const sizes = fontSizes?.length ? fontSizes.map(Number).filter((n) => n > 0).sort((a, b) => a - b) : FONT_SIZES
   // content boleh berupa paket dokumen tersimpan (hasil getDocument): { html, page, css, … }
   const savedDoc = content && typeof content === 'object' ? content : null
   if (savedDoc) {
@@ -382,8 +383,14 @@ export function create(target, { content, fileName = 'dokumen', onChange, onSave
   const groupOrder = [...new Set([...(toolbarOptions.order ?? []), ...DEFAULT_GROUP_ORDER])].filter((g) => GROUPS[g])
   const hidden = new Set(toolbarOptions.hide ?? [])
   if (!allowExport) for (const k of ['exportMenu', 'print']) hidden.add(k)
-  const known = new Set([...Object.keys(GROUPS), ...Object.values(TOOLBAR_GROUPS).flat(), ...Object.values(TOOLBAR_MENUS).flat()])
-  for (const name of [...(toolbarOptions.order ?? []), ...hidden]) {
+  // Tombol kustom: { nama: { text, tooltip, icon (HTML/SVG), onAction(api), isActive?(api) } }
+  const custom = toolbarOptions.buttons ?? {}
+  const toolByKey = new Map(Object.values(GROUPS).flat().map((t) => [t[0], t]))
+  for (const [name, def] of Object.entries(custom)) {
+    toolByKey.set(name, [name, (e, api, b) => def.onAction?.(api, b), def.isActive ? (e, api) => !!def.isActive(api) : null, !!def.always])
+  }
+  const known = new Set([...Object.keys(GROUPS), ...Object.values(TOOLBAR_GROUPS).flat(), ...Object.values(TOOLBAR_MENUS).flat(), ...Object.keys(custom)])
+  for (const name of [...(toolbarOptions.order ?? []), ...hidden, ...(toolbarOptions.groups ?? []).flat()]) {
     if (!known.has(name)) console.warn(`DocEditor: nama tombol/kelompok tidak dikenal di opsi toolbar: "${name}"`)
   }
   let el = typeof target === 'string' ? document.querySelector(target) : target
@@ -442,9 +449,11 @@ export function create(target, { content, fileName = 'dokumen', onChange, onSave
   ]
   // HTML header/footer (dari file, API, atau hasil edit di pratinjau) disaring skema editor: <script> dll. dibuang.
   const sanitize = (html) => (html?.trim() ? generateHTML(generateJSON(html, extensions), extensions) : '')
+  if (placeholder) extensions.push(Placeholder.configure({ placeholder }))
   const editor = new Editor({
     element: body,
     extensions,
+    editable: !readonly,
     content: content ?? '',
     editorProps: {
       attributes: { class: 'de-content' },
@@ -511,6 +520,30 @@ export function create(target, { content, fileName = 'dokumen', onChange, onSave
   const api = {
     editor,
     text,
+    fontSizes: sizes,
+    // Pilih gambar: diunggah lewat opsi imageUpload(file) -> URL, atau disimpan sebagai data URL.
+    async pickImageSrc() {
+      const file = await pickFile('image/*')
+      if (!imageUpload) return readDataUrl(file)
+      try {
+        return await imageUpload(file)
+      } catch (err) {
+        window.alert(`${text.imageUploadFailed}${err?.message ? `: ${err.message}` : ''}`)
+        return null
+      }
+    },
+    // Jalankan tombol toolbar mana pun lewat namanya (termasuk tombol kustom), mis. api.runTool('bold').
+    runTool(key, anchor = toolbar) {
+      const t = toolByKey.get(key)
+      if (!t || typeof t[1] !== 'function') return false
+      t[1](editor, api, anchor)
+      return true
+    },
+    setReadOnly(on = true) {
+      editor.setEditable(!on)
+      refresh()
+    },
+    isReadOnly: () => !editor.isEditable,
     getHTML: () => editor.getHTML(),
     getJSON: () => editor.getJSON(),
     setContent: (html) => editor.commands.setContent(html),
@@ -783,7 +816,8 @@ export function create(target, { content, fileName = 'dokumen', onChange, onSave
   }
 
   function makeButton(key) {
-    const { label, title, html } = text[key]
+    const c = custom[key]
+    const { label, title, html } = c ? { label: c.text ?? key, title: c.tooltip ?? c.text ?? key, html: c.icon } : text[key]
     const b = Object.assign(document.createElement('button'), { type: 'button', title })
     if (html) b.innerHTML = html
     else b.textContent = label
@@ -793,13 +827,17 @@ export function create(target, { content, fileName = 'dokumen', onChange, onSave
   }
 
   const buttons = []
-  for (const g of groupOrder) {
+  // toolbar.groups = [['undo','redo'], ['bold', …]] menentukan susunan sendiri; tanpa itu dipakai kelompok bawaan.
+  const layout = toolbarOptions.groups
+    ? toolbarOptions.groups.map((keys) => ({ g: null, keys }))
+    : groupOrder.map((g) => ({ g, keys: GROUPS[g].map(([k]) => k) }))
+  for (const { g, keys } of layout) {
     const opts = { onSave, mergeTags, templates, ai }
-    const tools = GROUPS[g].filter(([key]) => !hidden.has(key) && (!REQUIRES[key] || REQUIRES[key](opts)))
-    if (hidden.has(g) || !tools.length) continue
+    const tools = keys.map((k) => toolByKey.get(k)).filter((t) => t && !hidden.has(t[0]) && (!REQUIRES[t[0]] || REQUIRES[t[0]](opts)))
+    if ((g && hidden.has(g)) || !tools.length) continue
     const group = Object.assign(document.createElement('div'), { className: 'de-group' })
     group.setAttribute('role', 'group')
-    group.setAttribute('aria-label', text.groups[g])
+    group.setAttribute('aria-label', g ? text.groups[g] : text.toolbar)
     for (const [key, run, active, always, menu] of tools) {
       if (run === 'select' || run === 'color') {
         const control = makeControl(key, run)
@@ -826,7 +864,7 @@ export function create(target, { content, fileName = 'dokumen', onChange, onSave
     if (type === 'select') {
       const select = Object.assign(document.createElement('select'), { title, className: `de-select de-${key}` })
       select.setAttribute('aria-label', title)
-      for (const [value, name] of def.options(text, fonts)) select.append(new Option(name, value))
+      for (const [value, name] of def.options(text, fonts, sizes)) select.append(new Option(name, value))
       select.onchange = () => def.apply(editor, select.value)
       const sync = () => {
         const v = def.read(editor)
@@ -859,7 +897,7 @@ export function create(target, { content, fileName = 'dokumen', onChange, onSave
     const onImage = editor.isActive('image')
     const aiReady = !!api.isAiChatReady?.()
     for (const { b, active, always, needsTable, needsImage, needsAi, sync } of buttons) {
-      b.disabled = (codeView && !always) || (needsTable && !inTable) || (needsImage && !onImage) || (needsAi && !aiReady)
+      b.disabled = ((codeView || !editor.isEditable) && !always) || (needsTable && !inTable) || (needsImage && !onImage) || (needsAi && !aiReady)
       if (needsAi) b.title = aiReady ? text.aiChat.title : text.aiChatUnavailable
       sync?.()
       if (active) b.setAttribute('aria-pressed', String(typeof active === 'function' ? active(editor, api) : editor.isActive(...[].concat(active))))
@@ -1298,7 +1336,10 @@ export function create(target, { content, fileName = 'dokumen', onChange, onSave
       item('a11yCheck', () => api.openA11y(toolbar)),
     ] },
   ]
-  const menubarCtl = menubar ? createMenubar(toolbar, MENUS, text.menus.bar) : null
+  const menuKeys = Array.isArray(menubar) ? menubar : null
+  const menubarCtl = menubar && (!menuKeys || menuKeys.length)
+    ? createMenubar(toolbar, menuKeys ? MENUS.filter((m) => menuKeys.some((k) => text.menus[k] === m.label)) : MENUS, text.menus.bar)
+    : null
 
   // Status bar: posisi elemen (mis. table > tr > td > p) dan jumlah kata.
   let statusCtl = null
@@ -1388,3 +1429,8 @@ export function create(target, { content, fileName = 'dokumen', onChange, onSave
 
   return api
 }
+
+// API bergaya TinyMCE (tinymce.init, tinymce.get, editor.getContent, …) untuk migrasi tanpa mengubah kode.
+// Versi <script> juga memasangnya sebagai window.tinymce bila TinyMCE asli tidak dimuat.
+export const tinymce = makeTinymce(create)
+if (typeof window !== 'undefined' && !window.tinymce) window.tinymce = tinymce
