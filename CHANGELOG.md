@@ -6,6 +6,7 @@ Semua perubahan penting pada proyek ini. Dibuat otomatis dari riwayat git oleh `
 
 ### Ditambahkan
 
+- Tambah penyelarasan versi otomatis saat npm version (2026-11-19)
 - Tambah paket doc-editor-<versi>.tgz di dist/ sebagai cara instalasi (2026-11-19)
 - Tambah API kompatibel TinyMCE untuk migrasi tanpa ubah kode (2026-11-18)
 - Tambah CHANGELOG.md otomatis dan batasi pipeline CI ke GitLab opqrs (2026-11-18)

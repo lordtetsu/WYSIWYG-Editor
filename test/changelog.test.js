@@ -18,3 +18,12 @@ test('CHANGELOG: rilis dari tag, kategori dari kata pertama, commit rilis tidak 
   assert.match(noTag, /## \[v0\.3\.0 - 2026-11-19\]\n\n### Ditambahkan\n\n- Tambah rumus/)
   assert.doesNotMatch(noTag, /Belum dirilis/)
 })
+
+test('sync-version: hanya pola versi library yang diganti', async () => {
+  const { syncVersion } = await import('../scripts/sync-version.mjs')
+  const src = 'npm install @lord-tetsu/doc-editor@0.1.0\nVersi library: 0.1.0 · x\nnpm version patch   # 0.1.0 → 0.1.1\n' +
+    'terminal: `+ @lord-tetsu/doc-editor@0.1.1`\nnpm deprecate @lord-tetsu/doc-editor@0.0.0-stage "x"\n{ "name": "doc-editor-ai-server", "version": "0.1.0" }'
+  const out = syncVersion(src, '0.2.0')
+  assert.equal(out, 'npm install @lord-tetsu/doc-editor@0.2.0\nVersi library: 0.2.0 · x\nnpm version patch   # 0.1.0 → 0.1.1\n' +
+    'terminal: `+ @lord-tetsu/doc-editor@0.1.1`\nnpm deprecate @lord-tetsu/doc-editor@0.0.0-stage "x"\n{ "name": "doc-editor-ai-server", "version": "0.2.0" }')
+})

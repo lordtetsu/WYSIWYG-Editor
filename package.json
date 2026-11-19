@@ -18,7 +18,8 @@
     "test": "node --test test/",
     "changelog": "node scripts/changelog.mjs",
     "prepare": "test -d .git && git config core.hooksPath .githooks || true",
-    "prepublishOnly": "npm run build && npm test"
+    "prepublishOnly": "npm run build && npm test",
+    "version": "node scripts/sync-version.mjs && git add README.md docs/DOKUMENTASI-TEKNIS.md webserver/package.json"
   },
   "devDependencies": {
     "@codemirror/lang-xml": "^6.1.0",
