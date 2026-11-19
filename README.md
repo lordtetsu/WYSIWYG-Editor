@@ -19,7 +19,7 @@ Hasil build berupa **satu file JS** (CSS sudah termasuk) yang tidak memanggil CD
 
 ```bash
 npm install @lord-tetsu/doc-editor          # versi terbaru
-npm install @lord-tetsu/doc-editor@0.1.0    # atau kunci ke versi tertentu
+npm install @lord-tetsu/doc-editor@0.1.1    # atau kunci ke versi tertentu
 ```
 
 ```js

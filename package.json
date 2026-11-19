@@ -1,6 +1,6 @@
 {
   "name": "@lord-tetsu/doc-editor",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "license": "MIT",
   "description": "Editor WYSIWYG offline untuk aplikasi web apa pun, dengan ekspor Word (.docx), PDF, dan HTML sesuai pratinjau halaman, serta API bergaya TinyMCE",
   "type": "module",

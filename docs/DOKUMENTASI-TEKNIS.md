@@ -2,7 +2,7 @@
 
 Panduan lengkap untuk developer yang memasang, mengatur, dan mengoperasikan **doc-editor**, editor WYSIWYG offline dengan ekspor Word/PDF/HTML, beserta server pendampingnya (AI & ekspor dari backend).
 
-Versi library: 0.1.0 · Dokumen ini berlaku untuk kode di repositori ini per November 2026.
+Versi library: 0.1.1 · Dokumen ini berlaku untuk kode di repositori ini per November 2026.
 
 ---
 
@@ -811,7 +811,7 @@ File JavaScript library bisa disalin siapa pun yang membuka halaman. Yang dilind
 | CSS dari URL tidak terpakai saat ekspor otomatis | Tunggu `await ed.ready` sebelum ekspor |
 | Tombol tidak muncul | Disembunyikan lewat `toolbar.hide`, atau syaratnya belum terpenuhi (`onSave`, `mergeTags`, `templates`, `ai`, plugin PDF) |
 | `npm install` dari GitHub gagal: `ssh: connect to host github.com port 22` atau `ECONNREFUSED … codeload.github.com:443` | Jaringan memblokir GitHub. Pasang dari registry npm: `npm install @lord-tetsu/doc-editor` |
-| Paket terpasang tapi kosong, versi `0.0.0-stage` | Yang terpasang adalah penampung *staged publishing*, bukan library. Pasang versi tertentu (`npm install @lord-tetsu/doc-editor@0.1.0`), lalu lihat bagian 3 "Menerbitkan versi baru ke npm" |
+| Paket terpasang tapi kosong, versi `0.0.0-stage` | Yang terpasang adalah penampung *staged publishing*, bukan library. Pasang versi tertentu (`npm install @lord-tetsu/doc-editor@0.1.1`), lalu lihat bagian 3 "Menerbitkan versi baru ke npm" |
 | `Iterator is not defined` saat memuat `@lord-tetsu/doc-editor/pdf` | Plugin PDF dimuat di server (SSR) atau Node.js 20. Muat dengan `import()` di browser saja, mis. di dalam `useEffect` |
 | `npm install` menambah puluhan paket | Versi lama paket (sebelum dependensi dipindah ke `devDependencies`). Perbarui ke versi terbaru |
 
