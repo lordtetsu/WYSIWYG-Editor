@@ -2,7 +2,6 @@ node_modules/
 .npm/
 .env
 webserver/.env
-dist/
 .DS_Store
 reference/
 sample_file/

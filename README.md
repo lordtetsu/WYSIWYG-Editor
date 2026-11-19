@@ -22,6 +22,8 @@ cd webserver && node --test   # tes server AI & ekspor (14 tes)
 
 [CHANGELOG.md](CHANGELOG.md) diperbarui otomatis dari pesan commit oleh hook `.githooks/post-commit` (aktif setelah `npm install`). Awali pesan commit dengan *Tambah…*, *Perbaiki…*, *Hapus…*, atau lainnya (masuk *Diubah*). Rilis = tag `vX.Y.Z`.
 
+Pasang di proyek npm (Next.js dll.) langsung dari Git: `npm install github:lordtetsu/WYSIWYG-Editor`. `dist/` ikut di repo, jadi aplikasi PHP cukup mengunduh `dist/doc-editor.umd.js`.
+
 Prasyarat: Node.js 20.12+. Ekspor dari backend juga memerlukan Chrome/Chromium di server.
 
 | File hasil build | Ukuran gzip |

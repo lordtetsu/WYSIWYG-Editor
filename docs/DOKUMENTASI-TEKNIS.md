@@ -111,7 +111,8 @@ Plugin PDF bersifat opsional dan hanya perlu dimuat bila pengguna boleh mengimpo
 
 Cara mendistribusikan ke aplikasi lain, pilih salah satu:
 
-- Salin `dist/*.js` ke folder aset aplikasi (paling sederhana, cocok untuk PHP).
+- Salin `dist/*.js` ke folder aset aplikasi (paling sederhana, cocok untuk PHP). `dist/` ikut di repo Git, jadi bisa diunduh tanpa build.
+- Pasang langsung dari Git: `npm install github:lordtetsu/WYSIWYG-Editor` (tambahkan `#v0.1.0` untuk versi tertentu setelah ada tag rilis).
 - Pasang sebagai paket lokal: `npm install ../WYSIWYG_EDITOR` atau publikasikan ke registry npm internal. `package.json` sudah mengekspor `doc-editor` dan `doc-editor/pdf`.
 
 ## 4. Pemasangan di berbagai stack
