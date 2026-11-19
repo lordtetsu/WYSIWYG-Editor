@@ -14,7 +14,7 @@
     "docs/*.md"
   ],
   "scripts": {
-    "build": "esbuild src/index.js --bundle --minify --format=iife --global-name=DocEditor --outfile=dist/doc-editor.umd.js && esbuild src/index.js --bundle --minify --format=esm --outfile=dist/doc-editor.js && esbuild src/import-pdf.js --bundle --minify --format=iife --outfile=dist/doc-editor-pdf.umd.js && esbuild src/import-pdf.js --bundle --minify --format=esm --outfile=dist/doc-editor-pdf.js && npm pack --pack-destination dist --silent",
+    "build": "esbuild src/index.js --bundle --minify --format=iife --global-name=DocEditor --outfile=dist/doc-editor.umd.js && esbuild src/index.js --bundle --minify --format=esm --outfile=dist/doc-editor.js && esbuild src/import-pdf.js --bundle --minify --format=iife --outfile=dist/doc-editor-pdf.umd.js && esbuild src/import-pdf.js --bundle --minify --format=esm --outfile=dist/doc-editor-pdf.js",
     "test": "node --test test/",
     "changelog": "node scripts/changelog.mjs",
     "prepare": "test -d .git && git config core.hooksPath .githooks || true",

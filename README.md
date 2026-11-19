@@ -7,7 +7,7 @@ WYSIWYG editor offline untuk aplikasi web apa pun (PHP, JS, Next.js, …). Fitur
 
 Hasil build berupa **satu file JS** (CSS sudah termasuk) yang tidak memanggil CDN, ditambah satu file opsional untuk impor PDF.
 
-- Contoh & konfigurator: [examples/offline.html](examples/offline.html), buka langsung di browser.
+- Contoh & konfigurator: [examples/offline.html](examples/offline.html). Jalankan `npm install && npm run build` di folder library, lalu buka file itu di browser.
 - Server AI & ekspor dari backend: [webserver/](webserver/README.md)
 - **Dokumentasi teknis lengkap** (pemasangan per stack, semua opsi & API, server, keamanan, pemecahan masalah): [docs/DOKUMENTASI-TEKNIS.md](docs/DOKUMENTASI-TEKNIS.md)
 - **Migrasi dari TinyMCE** (opsi, nama tombol, API, peristiwa, perbedaan): [docs/MIGRASI-TINYMCE.md](docs/MIGRASI-TINYMCE.md)
@@ -18,7 +18,8 @@ Hasil build berupa **satu file JS** (CSS sudah termasuk) yang tidak memanggil CD
 ### Proyek npm (Next.js, React, Vue, Vite, …)
 
 ```bash
-npm install @lord-tetsu/doc-editor
+npm install @lord-tetsu/doc-editor          # versi terbaru
+npm install @lord-tetsu/doc-editor@0.1.0    # atau kunci ke versi tertentu
 ```
 
 ```js
@@ -29,24 +30,19 @@ import { create, registerImporter } from '@lord-tetsu/doc-editor'
 import('@lord-tetsu/doc-editor/pdf').then(({ pdfToHtml }) => registerImporter(['pdf'], pdfToHtml))
 ```
 
-Paket tidak punya dependensi tambahan: semua sudah terbundel di dalamnya.
-
-### Tanpa akses registry npm (file `.tgz`)
-
-1. Unduh file paket `lord-tetsu-doc-editor-<versi>.tgz` (± 2 MB), lalu simpan di proyek, misalnya di `vendor/`.
-2. Pasang: `npm install ./vendor/lord-tetsu-doc-editor-0.1.0.tgz`. `package.json` proyek akan berisi `"@lord-tetsu/doc-editor": "file:vendor/lord-tetsu-doc-editor-0.1.0.tgz"`.
-3. Simpan file `.tgz` itu bersama kode proyek, supaya anggota tim cukup menjalankan `npm install`. Untuk versi baru, ganti filenya lalu pasang ulang.
+Paket tidak punya dependensi tambahan: semua sudah terbundel di dalamnya. Bila pemasangan gagal atau paket yang terpasang kosong, lihat [pemecahan masalah](docs/DOKUMENTASI-TEKNIS.md#19-pemecahan-masalah).
 
 ### Halaman biasa / PHP (`<script>`)
 
-Ambil file JS siap pakai dari dalam file paket `.tgz` (atau dari `node_modules/@lord-tetsu/doc-editor/dist/` setelah `npm install`):
+Pasang paketnya sekali (di komputer mana pun yang punya npm), lalu ambil file JS siap pakai dari `node_modules/@lord-tetsu/doc-editor/dist/`:
 
 ```bash
-tar -xzf lord-tetsu-doc-editor-0.1.0.tgz package/dist/doc-editor.umd.js package/dist/doc-editor-pdf.umd.js
-# hasil: package/dist/doc-editor.umd.js (wajib) dan package/dist/doc-editor-pdf.umd.js (opsional, impor PDF)
+npm install @lord-tetsu/doc-editor
+cp node_modules/@lord-tetsu/doc-editor/dist/doc-editor.umd.js     public/assets/   # wajib
+cp node_modules/@lord-tetsu/doc-editor/dist/doc-editor-pdf.umd.js public/assets/   # opsional, impor PDF
 ```
 
-Salin ke folder aset aplikasi (mis. `public/assets/`), lalu muat dengan `<script src="/assets/doc-editor.umd.js"></script>`.
+Lalu muat dengan `<script src="/assets/doc-editor.umd.js"></script>`.
 
 | File di dalam paket | Pakai untuk | Ukuran gzip |
 |---|---|---|
@@ -181,8 +177,17 @@ Rincian di [dokumentasi teknis](docs/DOKUMENTASI-TEKNIS.md#18-batasan-yang-diket
 
 ```bash
 npm install
-npm run build   # dist/*.js + dist/lord-tetsu-doc-editor-<versi>.tgz
-npm publish     # terbitkan ke npm (build + tes otomatis lewat prepublishOnly; perlu npm login)
+npm run build   # dist/*.js
 npm test        # tes library (32 tes)
 cd webserver && node --test   # tes server AI & ekspor (14 tes)
 ```
+
+Menerbitkan versi baru ke npm (akun anggota organisasi npm `lord-tetsu`, 2FA aktif):
+
+```bash
+npm version patch -m "Rilis v%s"   # naikkan versi: commit + tag
+npm publish --otp=123456           # build + tes otomatis, lalu terbit (kode dari aplikasi authenticator)
+npm view @lord-tetsu/doc-editor versions dist-tags   # pastikan versi baru terbit dan menjadi latest
+```
+
+Rincian, termasuk galat umum dan penampung `0.0.0-stage`, ada di [dokumentasi teknis](docs/DOKUMENTASI-TEKNIS.md#menerbitkan-versi-baru-ke-npm).

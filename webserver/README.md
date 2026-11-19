@@ -114,5 +114,6 @@ $file = curl_exec($ch); // kirim ke pengguna dengan header Content-Type & Conten
 
 - **Format:** `docx`, `pdf`, `html`.
 - **Hasil identik dengan pratinjau:** server menjalankan library editor yang sama di Chrome/Chromium headless. Chrome harus terpasang; jika tidak ditemukan otomatis, isi `CHROME_PATH`.
+- **File library:** default `../dist/doc-editor.umd.js`, jadi jalankan `npm install && npm run build` di folder library sebelum menyalakan server. Bisa juga arahkan `DOC_EDITOR_LIB` ke `node_modules/@lord-tetsu/doc-editor/dist/doc-editor.umd.js`.
 - **Hanya untuk server:** `EXPORT_TOKEN` wajib diisi dan tidak boleh ada di browser. Endpoint ini tidak mengirim header CORS.
 - **Tanpa jaringan:** saat render, Chrome tidak bisa mengakses jaringan, sehingga dokumen tidak bisa membuat server mengambil URL luar. Gambar sebaiknya disimpan sebagai data URL (bawaan editor).

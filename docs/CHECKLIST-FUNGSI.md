@@ -20,7 +20,7 @@ Halaman uji yang paling mudah adalah `examples/offline.html` (playground): semua
 
 | No | Fungsi | Langkah uji | Hasil yang diharapkan | Status | Catatan |
 |---|---|---|---|---|---|
-| A1 | Pasang paket | `npm install @lord-tetsu/doc-editor`, atau tanpa registry: `npm install ./vendor/lord-tetsu-doc-editor-<versi>.tgz` | Terpasang tanpa dependensi tambahan; `import { create } from '@lord-tetsu/doc-editor'` berjalan | | |
+| A1 | Pasang paket | `npm install @lord-tetsu/doc-editor` | Terpasang tanpa dependensi tambahan; `import { create } from '@lord-tetsu/doc-editor'` berjalan | | |
 | A2 | Pemakaian `<script>` | Muat `doc-editor.umd.js`, panggil `DocEditor.create('#editor')` | Editor tampil dengan menubar, toolbar, dan status bar | | |
 | A3 | Sinkron `<textarea>` | Buat editor di atas `<textarea name="isi">` di dalam form, ketik teks, kirim form | Server menerima HTML terbaru di field `isi` | | |
 | A4 | Next.js / React | Komponen `'use client'` dengan `create()` di `useEffect` dan `destroy()` saat unmount | Editor tampil sekali (juga di mode dev/Strict Mode), `next build` berhasil | | |

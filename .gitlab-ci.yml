@@ -28,10 +28,8 @@ test:
 build:
   stage: build
   script:
-    - apk add --no-cache git >/dev/null
     - npm rebuild esbuild # --ignore-scripts di atas melewati unduhan biner esbuild
     - npm run build
-    - git diff --exit-code --stat -- dist/ || (echo "dist/ tidak sesuai kode sumber; jalankan npm run build lalu commit" && exit 1)
   artifacts:
     paths: [dist/]
     expire_in: 30 days

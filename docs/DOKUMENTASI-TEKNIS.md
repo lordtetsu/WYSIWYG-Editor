@@ -106,28 +106,60 @@ Hasil build di `dist/`:
 | `doc-editor.js` | `import` (ESM, bundler/Next.js) | ± 496 KB |
 | `doc-editor-pdf.umd.js` | Plugin impor PDF untuk `<script>` | ± 517 KB |
 | `doc-editor-pdf.js` | Plugin impor PDF untuk `import` | ± 517 KB |
-| `lord-tetsu-doc-editor-<versi>.tgz` | Paket npm siap pasang (`npm install ./lord-tetsu-doc-editor-0.1.0.tgz`) | ± 2 MB |
 
 Plugin PDF bersifat opsional dan hanya perlu dimuat bila pengguna boleh mengimpor PDF.
 
 Cara mendistribusikan ke aplikasi lain, pilih salah satu:
 
 - Pasang dari registry npm: `npm install @lord-tetsu/doc-editor`. Paket tidak punya dependensi tambahan (semua terbundel).
-- Salin `dist/*.js` ke folder aset aplikasi (paling sederhana, cocok untuk PHP). `dist/` ikut di repo Git, jadi bisa diunduh tanpa build.
-- Pasang dari file paket: salin `dist/lord-tetsu-doc-editor-<versi>.tgz` ke proyek (mis. `vendor/`), lalu `npm install ./vendor/lord-tetsu-doc-editor-0.1.0.tgz`. Tidak butuh akses GitHub/GitLab; commit file `.tgz` itu di proyek agar tim cukup menjalankan `npm install`. File ini dibuat ulang otomatis oleh `npm run build`.
-- Pasang langsung dari GitHub lewat HTTPS: `npm install https://github.com/lordtetsu/WYSIWYG-Editor/archive/refs/heads/main.tar.gz`. Untuk mengunci versi, ganti `refs/heads/main` dengan hash commit (mis. `c051c51`) atau `refs/tags/v0.1.0`. Bentuk `npm install github:…` atau `git+https://github.com/…` diubah npm menjadi SSH (port 22) dan gagal di jaringan yang memblokir port itu.
+- Salin `dist/*.js` ke folder aset aplikasi (paling sederhana, cocok untuk PHP). Ambil dari `node_modules/@lord-tetsu/doc-editor/dist/` setelah `npm install`, atau dari `dist/` hasil `npm run build`. `dist/` tidak disimpan di repositori.
 - Pasang sebagai paket lokal: `npm install ../WYSIWYG_EDITOR`. Paket mengekspor `@lord-tetsu/doc-editor` dan `@lord-tetsu/doc-editor/pdf`.
 
 ### Menerbitkan versi baru ke npm
 
-Sekali saja: akun npm pemilik scope `@lord-tetsu` (aktifkan 2FA), lalu `npm login`.
+**Prasyarat (sekali saja):**
+
+1. Akun npm yang menjadi owner/anggota organisasi npm **`lord-tetsu`** (cek: `npm org ls lord-tetsu`).
+2. **2FA aktif** di akun itu dengan mode *Authorization and writes* (npmjs.com → Account Settings → Two-Factor Authentication). Tanpa 2FA, registry menolak publish dengan `403 … Two-factor authentication … is required to publish packages`.
+3. `npm login`, lalu `npm whoami` untuk memastikan akun yang aktif.
+
+**Langkah rilis:**
 
 ```bash
-npm version patch -m "Rilis v%s"   # 0.1.0 → 0.1.1 (minor/major sesuai perubahan); membuat commit + tag v0.1.1
-npm publish                        # prepublishOnly menjalankan build + tes; publishConfig.access = public
+# 1. pastikan semua perubahan sudah di-commit dan di-push
+npm version patch -m "Rilis v%s"   # 0.1.0 → 0.1.1 (minor/major sesuai perubahan): commit + tag v0.1.1
+git push <remote> main v0.1.1      # ke setiap remote, termasuk tag-nya
+
+# 2. terbitkan (prepublishOnly menjalankan build + tes; publishConfig.access = public)
+npm publish --otp=123456           # kode 6 digit terbaru dari aplikasi authenticator
 ```
 
-Pesan "Rilis v…" tidak dicatat di CHANGELOG, dan tag `v0.1.1` menjadi judul versi di CHANGELOG pada commit berikutnya. Versi yang sudah terbit tidak bisa ditimpa, hanya bisa dihapus dalam 72 jam pertama.
+Tanda berhasil: terminal menampilkan `+ @lord-tetsu/doc-editor@0.1.1`.
+
+**Memastikan versi benar-benar terbit:**
+
+```bash
+npm view @lord-tetsu/doc-editor versions dist-tags   # versi baru ada dan latest menunjuk ke sana
+```
+
+Lalu uji di folder kosong: `npm install @lord-tetsu/doc-editor`. Jumlah paket yang ditambahkan harus 1 (tanpa dependensi). Paket yang baru terbit kadang baru terbaca publik setelah beberapa menit, karena cache registry.
+
+**Gunakan `npm publish`, bukan `npm stage publish`.** `npm stage` adalah fitur *staged publishing*: versi ditahan sampai disetujui dengan `npm stage approve <id>` (butuh OTP). Untuk paket yang belum pernah ada, npm membuat penampung kosong **`0.0.0-stage`** ("Temporary package placeholder for staged publishing") yang menjadi tag `latest`. Bila penampung itu muncul:
+
+- Periksa rilis yang tertahan: `npm stage list @lord-tetsu/doc-editor`. Bila ada, setujui dengan `npm stage approve <id>`. Bila kosong, jalankan `npm publish --otp=…` biasa.
+- Setelah versi asli terbit, tandai penampung sebagai usang: `npm deprecate @lord-tetsu/doc-editor@0.0.0-stage "Penampung, gunakan versi terbaru" --otp=…`.
+
+**Galat yang umum:**
+
+| Galat | Penyebab & solusi |
+|---|---|
+| `403 … Two-factor authentication … is required` | 2FA belum aktif untuk *writes*. Aktifkan, lalu publish dengan `--otp` |
+| `EOTP` / `401` saat publish | Kode OTP salah atau kedaluwarsa (± 30 detik). Ulangi dengan kode baru |
+| `403 … You do not have permission` | Akun bukan owner/anggota organisasi `lord-tetsu` |
+| `403 … cannot publish over the previously published versions` | Versi itu sudah pernah terbit. Naikkan versi dengan `npm version patch` |
+| `E402 Payment Required` | Paket ber-scope diterbitkan privat. Sudah dicegah oleh `publishConfig.access = public` |
+
+Pesan "Rilis v…" tidak dicatat di CHANGELOG, dan commit itu langsung menjadi judul versi di CHANGELOG. Versi yang sudah terbit tidak bisa ditimpa, dan hanya bisa dihapus (`npm unpublish`) dalam 72 jam pertama.
 
 ## 4. Pemasangan di berbagai stack
 
@@ -778,6 +810,10 @@ File JavaScript library bisa disalin siapa pun yang membuka halaman. Yang dilind
 | PDF impor kosong | PDF hasil scan (gambar). Perlu OCR di luar library |
 | CSS dari URL tidak terpakai saat ekspor otomatis | Tunggu `await ed.ready` sebelum ekspor |
 | Tombol tidak muncul | Disembunyikan lewat `toolbar.hide`, atau syaratnya belum terpenuhi (`onSave`, `mergeTags`, `templates`, `ai`, plugin PDF) |
+| `npm install` dari GitHub gagal: `ssh: connect to host github.com port 22` atau `ECONNREFUSED … codeload.github.com:443` | Jaringan memblokir GitHub. Pasang dari registry npm: `npm install @lord-tetsu/doc-editor` |
+| Paket terpasang tapi kosong, versi `0.0.0-stage` | Yang terpasang adalah penampung *staged publishing*, bukan library. Pasang versi tertentu (`npm install @lord-tetsu/doc-editor@0.1.0`), lalu lihat bagian 3 "Menerbitkan versi baru ke npm" |
+| `Iterator is not defined` saat memuat `@lord-tetsu/doc-editor/pdf` | Plugin PDF dimuat di server (SSR) atau Node.js 20. Muat dengan `import()` di browser saja, mis. di dalam `useEffect` |
+| `npm install` menambah puluhan paket | Versi lama paket (sebelum dependensi dipindah ke `devDependencies`). Perbarui ke versi terbaru |
 
 ## 20. Memperluas library
 

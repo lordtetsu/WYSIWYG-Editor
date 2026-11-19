@@ -6,3 +6,4 @@ webserver/.env
 reference/
 sample_file/
 .claude/
+dist/
