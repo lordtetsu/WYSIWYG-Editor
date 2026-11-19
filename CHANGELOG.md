@@ -13,4 +13,5 @@ Semua perubahan penting pada proyek ini. Dibuat otomatis dari riwayat git oleh `
 
 ### Diubah
 
+- Ubah nama paket menjadi @lord-tetsu/doc-editor dan siapkan terbit npm (2026-11-19)
 - Ubah distribusi: sertakan dist/ agar bisa dipasang langsung dari Git (2026-11-19)

@@ -15,36 +15,34 @@ Hasil build berupa **satu file JS** (CSS sudah termasuk) yang tidak memanggil CD
 
 ## Instalasi
 
-Library dibagikan sebagai satu file paket: **`doc-editor-<versi>.tgz`** (± 2 MB, ada di folder `dist/`). Pemasangan tidak membutuhkan internet selain registry npm.
-
 ### Proyek npm (Next.js, React, Vue, Vite, …)
 
-1. Unduh `doc-editor-0.1.0.tgz`, lalu simpan di proyek Anda, misalnya di folder `vendor/`.
-2. Pasang:
+```bash
+npm install @lord-tetsu/doc-editor
+```
 
-   ```bash
-   npm install ./vendor/doc-editor-0.1.0.tgz
-   ```
+```js
+import { create, registerImporter } from '@lord-tetsu/doc-editor'
 
-   `package.json` proyek akan berisi `"doc-editor": "file:vendor/doc-editor-0.1.0.tgz"`. Simpan file `.tgz` itu bersama kode proyek, supaya anggota tim cukup menjalankan `npm install`.
-3. Pakai:
+// Opsional, impor PDF: muat plugin di browser saja (mis. di dalam useEffect), bukan di bagian atas file,
+// karena pdf.js tidak bisa berjalan saat render di server (SSR Next.js).
+import('@lord-tetsu/doc-editor/pdf').then(({ pdfToHtml }) => registerImporter(['pdf'], pdfToHtml))
+```
 
-   ```js
-   import { create, registerImporter } from 'doc-editor'
+Paket tidak punya dependensi tambahan: semua sudah terbundel di dalamnya.
 
-   // Opsional, impor PDF: muat plugin di browser saja (mis. di dalam useEffect), bukan di bagian atas file,
-   // karena pdf.js tidak bisa berjalan saat render di server (SSR Next.js).
-   import('doc-editor/pdf').then(({ pdfToHtml }) => registerImporter(['pdf'], pdfToHtml))
-   ```
+### Tanpa akses registry npm (file `.tgz`)
 
-Untuk versi baru, ganti file `.tgz` di `vendor/`, lalu jalankan `npm install ./vendor/doc-editor-<versi-baru>.tgz`.
+1. Unduh file paket `lord-tetsu-doc-editor-<versi>.tgz` (± 2 MB), lalu simpan di proyek, misalnya di `vendor/`.
+2. Pasang: `npm install ./vendor/lord-tetsu-doc-editor-0.1.0.tgz`. `package.json` proyek akan berisi `"@lord-tetsu/doc-editor": "file:vendor/lord-tetsu-doc-editor-0.1.0.tgz"`.
+3. Simpan file `.tgz` itu bersama kode proyek, supaya anggota tim cukup menjalankan `npm install`. Untuk versi baru, ganti filenya lalu pasang ulang.
 
 ### Halaman biasa / PHP (`<script>`)
 
-Ambil file JS siap pakai dari dalam paket:
+Ambil file JS siap pakai dari dalam file paket `.tgz` (atau dari `node_modules/@lord-tetsu/doc-editor/dist/` setelah `npm install`):
 
 ```bash
-tar -xzf doc-editor-0.1.0.tgz package/dist/doc-editor.umd.js package/dist/doc-editor-pdf.umd.js
+tar -xzf lord-tetsu-doc-editor-0.1.0.tgz package/dist/doc-editor.umd.js package/dist/doc-editor-pdf.umd.js
 # hasil: package/dist/doc-editor.umd.js (wajib) dan package/dist/doc-editor-pdf.umd.js (opsional, impor PDF)
 ```
 
@@ -60,7 +58,7 @@ Prasyarat ekspor dari backend: Node.js 20.12+ dan Chrome/Chromium di server (lih
 
 ## Pindah dari TinyMCE
 
-Kode TinyMCE yang sudah ada bisa langsung dipakai: ganti `<script src="tinymce.min.js">` dengan `doc-editor.umd.js`, atau `import tinymce from 'tinymce'` dengan `import { tinymce } from 'doc-editor'`.
+Kode TinyMCE yang sudah ada bisa langsung dipakai: ganti `<script src="tinymce.min.js">` dengan `doc-editor.umd.js`, atau `import tinymce from 'tinymce'` dengan `import { tinymce } from '@lord-tetsu/doc-editor'`.
 
 ```js
 tinymce.init({
@@ -87,7 +85,7 @@ Opsi, tombol, API, dan peristiwa yang didukung ada di [docs/MIGRASI-TINYMCE.md](
 
 - **Form biasa (PHP dll.):** jika target berupa `<textarea>`, nilainya otomatis berisi HTML editor.
 - **Next.js:** panggil `create()` di `useEffect` pada komponen `'use client'`, dan `destroy()` saat unmount. Contoh lengkap di [dokumentasi teknis](docs/DOKUMENTASI-TEKNIS.md#43-nextjs--react).
-- **Impor PDF:** muat juga `doc-editor-pdf.umd.js` setelah library utama. Dengan `import`, muat `doc-editor/pdf` secara dinamis di browser (lihat Instalasi).
+- **Impor PDF:** muat juga `doc-editor-pdf.umd.js` setelah library utama. Dengan `import`, muat `@lord-tetsu/doc-editor/pdf` secara dinamis di browser (lihat Instalasi).
 
 Contoh lengkap per stack ada di [dokumentasi teknis](docs/DOKUMENTASI-TEKNIS.md#4-pemasangan-di-berbagai-stack).
 
@@ -183,7 +181,8 @@ Rincian di [dokumentasi teknis](docs/DOKUMENTASI-TEKNIS.md#18-batasan-yang-diket
 
 ```bash
 npm install
-npm run build   # dist/*.js + dist/doc-editor-<versi>.tgz
+npm run build   # dist/*.js + dist/lord-tetsu-doc-editor-<versi>.tgz
+npm publish     # terbitkan ke npm (build + tes otomatis lewat prepublishOnly; perlu npm login)
 npm test        # tes library (32 tes)
 cd webserver && node --test   # tes server AI & ekspor (14 tes)
 ```

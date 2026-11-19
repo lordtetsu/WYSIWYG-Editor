@@ -1,5 +1,5 @@
 // CHANGELOG.md dibuat ulang dari riwayat git (format Keep a Changelog).
-// Rilis = tag yang diawali "v<angka>" (mis. v0.2.0, v0.0.3-RELEASE); commit setelah tag terakhir masuk "Belum dirilis".
+// Rilis = tag "v<angka>…" (mis. v0.2.0, v0.0.3-RELEASE) atau commit "Rilis vX.Y.Z"; commit setelahnya masuk "Belum dirilis".
 // Kategori diambil dari kata pertama pesan commit (Tambah…, Perbaiki…, Hapus…, lainnya = Diubah).
 // Dipanggil otomatis oleh .githooks/post-commit. Opsi --check: gagal bila CHANGELOG.md belum mutakhir (dipakai CI).
 import { execFileSync } from 'node:child_process'
@@ -21,7 +21,8 @@ const HEADER = '# Changelog\n\nSemua perubahan penting pada proyek ini. Dibuat o
 export function render(commits, tags) {
   const releases = [{ title: 'Belum dirilis', items: [] }]
   for (const c of commits) {
-    const tag = tags.get(c.hash)
+    // Commit "Rilis vX.Y.Z" (npm version -m "Rilis v%s") = batas rilis walau tag-nya belum dibuat.
+    const tag = tags.get(c.hash) ?? c.subject.match(/^(?:rilis|release)\s+(v\d\S*)/i)?.[1]
     if (tag) releases.push({ title: `${tag} - ${c.date}`, items: [] })
     if (/^rilis\b|^release\b/i.test(c.subject)) continue // commit penanda rilis tidak dicatat
     releases.at(-1).items.push(c)

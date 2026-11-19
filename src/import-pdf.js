@@ -4,7 +4,7 @@
 // (baris teratas/terbawah yang berulang di banyak halaman). Gambar PDF tidak dipulihkan.
 // Dipisah dari file utama karena pdf.js besar (~490 KB gzip).
 // <script>: muat setelah doc-editor.umd.js, otomatis terdaftar.
-// import  : import { registerImporter } from 'doc-editor'; import { pdfToHtml } from 'doc-editor/pdf'
+// import  : import { registerImporter } from '@lord-tetsu/doc-editor'; import { pdfToHtml } from '@lord-tetsu/doc-editor/pdf'
 //           registerImporter(['pdf'], pdfToHtml)
 import { getDocument } from 'pdfjs-dist'
 // Worker dijalankan di thread utama (tanpa file worker terpisah) agar tetap satu file & offline.

@@ -13,4 +13,8 @@ test('CHANGELOG: rilis dari tag, kategori dari kata pertama, commit rilis tidak 
   assert.match(out, /## \[Belum dirilis\]\n\n### Diperbaiki\n\n- Perbaiki nomor halaman catatan kaki \(2026-11-20\)\n/)
   assert.match(out, /## \[v0\.2\.0 - 2026-11-19\]\n\n### Ditambahkan\n\n- Tambah video \(2026-11-19\)\n\n### Diubah\n\n- Ubah tema gelap \(2026-11-18\)\n/)
   assert.doesNotMatch(out, /Rilis v0\.2\.0/)
+  // commit rilis tanpa tag (tag dibuat npm setelah commit) tetap menjadi batas versi
+  const noTag = render([c('b', '2026-11-19', 'Rilis v0.3.0'), c('a', '2026-11-18', 'Tambah rumus')], new Map())
+  assert.match(noTag, /## \[v0\.3\.0 - 2026-11-19\]\n\n### Ditambahkan\n\n- Tambah rumus/)
+  assert.doesNotMatch(noTag, /Belum dirilis/)
 })

@@ -45,7 +45,7 @@ Isi textarea otomatis diperbarui setiap kali isi editor berubah, jadi form terki
 import tinymce from 'tinymce'
 
 // Sesudah
-import { tinymce } from 'doc-editor'
+import { tinymce } from '@lord-tetsu/doc-editor'
 ```
 
 ### 1.3 React / Next.js (pengganti `@tinymce/tinymce-react`)
@@ -55,7 +55,7 @@ Komponen kecil dengan props yang sama seperti `<Editor>` dari `@tinymce/tinymce-
 ```jsx
 'use client'
 import { useEffect, useRef } from 'react'
-import { tinymce } from 'doc-editor'
+import { tinymce } from '@lord-tetsu/doc-editor'
 
 export function Editor({ init = {}, initialValue = '', onEditorChange, onInit }) {
   const ref = useRef(null)
@@ -303,7 +303,7 @@ const paket = ed.docEditor.getDocument()             // simpan isi + pengaturan 
 
 ## 7. Daftar periksa migrasi
 
-1. Ganti file script, atau ganti `import tinymce from 'tinymce'` dengan `import { tinymce } from 'doc-editor'`.
+1. Ganti file script, atau ganti `import tinymce from 'tinymce'` dengan `import { tinymce } from '@lord-tetsu/doc-editor'`.
 2. Buka halaman, lalu periksa konsol browser. Setiap opsi, tombol, atau perintah yang belum didukung disebut namanya.
 3. Uji alur simpan: form terkirim (textarea otomatis terisi), atau `getContent()` dipanggil saat simpan.
 4. Bila memakai unggah gambar: uji `images_upload_handler` / `images_upload_url`.

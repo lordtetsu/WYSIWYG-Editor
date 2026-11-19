@@ -1,8 +1,8 @@
 {
-  "name": "doc-editor",
+  "name": "@lord-tetsu/doc-editor",
   "version": "0.1.0",
   "license": "MIT",
-  "description": "WYSIWYG editor offline dengan ekspor Word (.docx) dan PDF",
+  "description": "Editor WYSIWYG offline untuk aplikasi web apa pun, dengan ekspor Word (.docx), PDF, dan HTML sesuai pratinjau halaman, serta API bergaya TinyMCE",
   "type": "module",
   "module": "dist/doc-editor.js",
   "exports": {
@@ -10,15 +10,17 @@
     "./pdf": "./dist/doc-editor-pdf.js"
   },
   "files": [
-    "dist/*.js"
+    "dist/*.js",
+    "docs/*.md"
   ],
   "scripts": {
     "build": "esbuild src/index.js --bundle --minify --format=iife --global-name=DocEditor --outfile=dist/doc-editor.umd.js && esbuild src/index.js --bundle --minify --format=esm --outfile=dist/doc-editor.js && esbuild src/import-pdf.js --bundle --minify --format=iife --outfile=dist/doc-editor-pdf.umd.js && esbuild src/import-pdf.js --bundle --minify --format=esm --outfile=dist/doc-editor-pdf.js && npm pack --pack-destination dist --silent",
     "test": "node --test test/",
     "changelog": "node scripts/changelog.mjs",
-    "prepare": "test -d .git && git config core.hooksPath .githooks || true"
+    "prepare": "test -d .git && git config core.hooksPath .githooks || true",
+    "prepublishOnly": "npm run build && npm test"
   },
-  "dependencies": {
+  "devDependencies": {
     "@codemirror/lang-xml": "^6.1.0",
     "@codemirror/state": "^6.7.6",
     "@tiptap/core": "^3.34.0",
@@ -32,15 +34,28 @@
     "@tiptap/extensions": "^3.34.0",
     "@tiptap/pm": "^3.34.0",
     "@tiptap/starter-kit": "^3.34.0",
+    "@xmldom/xmldom": "^0.9.12",
     "codemirror": "^6.0.2",
     "docx": "^9.15.4",
+    "esbuild": "^0.28.2",
     "fflate": "^0.8.3",
     "marked": "^18.2.1",
     "pdfjs-dist": "^6.5.438",
     "temml": "^0.14.0"
   },
-  "devDependencies": {
-    "@xmldom/xmldom": "^0.9.12",
-    "esbuild": "^0.28.2"
+  "keywords": [
+    "wysiwyg",
+    "editor",
+    "rich-text",
+    "docx",
+    "word",
+    "pdf",
+    "export",
+    "tinymce",
+    "tiptap",
+    "offline"
+  ],
+  "publishConfig": {
+    "access": "public"
   }
 }

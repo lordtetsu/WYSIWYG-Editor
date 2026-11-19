@@ -106,16 +106,28 @@ Hasil build di `dist/`:
 | `doc-editor.js` | `import` (ESM, bundler/Next.js) | ± 496 KB |
 | `doc-editor-pdf.umd.js` | Plugin impor PDF untuk `<script>` | ± 517 KB |
 | `doc-editor-pdf.js` | Plugin impor PDF untuk `import` | ± 517 KB |
-| `doc-editor-<versi>.tgz` | Paket npm siap pasang (`npm install ./doc-editor-0.1.0.tgz`) | ± 2 MB |
+| `lord-tetsu-doc-editor-<versi>.tgz` | Paket npm siap pasang (`npm install ./lord-tetsu-doc-editor-0.1.0.tgz`) | ± 2 MB |
 
 Plugin PDF bersifat opsional dan hanya perlu dimuat bila pengguna boleh mengimpor PDF.
 
 Cara mendistribusikan ke aplikasi lain, pilih salah satu:
 
+- Pasang dari registry npm: `npm install @lord-tetsu/doc-editor`. Paket tidak punya dependensi tambahan (semua terbundel).
 - Salin `dist/*.js` ke folder aset aplikasi (paling sederhana, cocok untuk PHP). `dist/` ikut di repo Git, jadi bisa diunduh tanpa build.
-- Pasang dari file paket: salin `dist/doc-editor-<versi>.tgz` ke proyek (mis. `vendor/`), lalu `npm install ./vendor/doc-editor-0.1.0.tgz`. Tidak butuh akses GitHub/GitLab; commit file `.tgz` itu di proyek agar tim cukup menjalankan `npm install`. File ini dibuat ulang otomatis oleh `npm run build`.
+- Pasang dari file paket: salin `dist/lord-tetsu-doc-editor-<versi>.tgz` ke proyek (mis. `vendor/`), lalu `npm install ./vendor/lord-tetsu-doc-editor-0.1.0.tgz`. Tidak butuh akses GitHub/GitLab; commit file `.tgz` itu di proyek agar tim cukup menjalankan `npm install`. File ini dibuat ulang otomatis oleh `npm run build`.
 - Pasang langsung dari GitHub lewat HTTPS: `npm install https://github.com/lordtetsu/WYSIWYG-Editor/archive/refs/heads/main.tar.gz`. Untuk mengunci versi, ganti `refs/heads/main` dengan hash commit (mis. `c051c51`) atau `refs/tags/v0.1.0`. Bentuk `npm install github:…` atau `git+https://github.com/…` diubah npm menjadi SSH (port 22) dan gagal di jaringan yang memblokir port itu.
-- Pasang sebagai paket lokal: `npm install ../WYSIWYG_EDITOR` atau publikasikan ke registry npm internal. `package.json` sudah mengekspor `doc-editor` dan `doc-editor/pdf`.
+- Pasang sebagai paket lokal: `npm install ../WYSIWYG_EDITOR`. Paket mengekspor `@lord-tetsu/doc-editor` dan `@lord-tetsu/doc-editor/pdf`.
+
+### Menerbitkan versi baru ke npm
+
+Sekali saja: akun npm pemilik scope `@lord-tetsu` (aktifkan 2FA), lalu `npm login`.
+
+```bash
+npm version patch -m "Rilis v%s"   # 0.1.0 → 0.1.1 (minor/major sesuai perubahan); membuat commit + tag v0.1.1
+npm publish                        # prepublishOnly menjalankan build + tes; publishConfig.access = public
+```
+
+Pesan "Rilis v…" tidak dicatat di CHANGELOG, dan tag `v0.1.1` menjadi judul versi di CHANGELOG pada commit berikutnya. Versi yang sudah terbit tidak bisa ditimpa, hanya bisa dihapus dalam 72 jam pertama.
 
 ## 4. Pemasangan di berbagai stack
 
@@ -159,9 +171,9 @@ const ed = DocEditor.create('#editor', {
 ```jsx
 'use client'
 import { useEffect, useRef } from 'react'
-import { create } from 'doc-editor'
+import { create } from '@lord-tetsu/doc-editor'
 // Opsional, impor PDF (lihat 4.5):
-// di dalam useEffect: import('doc-editor/pdf').then(({ pdfToHtml }) => registerImporter(['pdf'], pdfToHtml))
+// di dalam useEffect: import('@lord-tetsu/doc-editor/pdf').then(({ pdfToHtml }) => registerImporter(['pdf'], pdfToHtml))
 
 export default function Editor({ value, onSave }) {
   const ref = useRef(null)
@@ -182,10 +194,10 @@ Pola yang sama: panggil `create(el, opsi)` setelah elemen terpasang (`onMounted`
 ### 4.5 Plugin PDF dengan ESM
 
 ```js
-import { create, registerImporter } from 'doc-editor'
+import { create, registerImporter } from '@lord-tetsu/doc-editor'
 // Muat di browser saja (mis. di dalam useEffect). pdf.js butuh fitur browser dan gagal bila dimuat
 // saat render di server (SSR Next.js) atau di Node.js 20.
-import('doc-editor/pdf').then(({ pdfToHtml }) => registerImporter(['pdf'], pdfToHtml))
+import('@lord-tetsu/doc-editor/pdf').then(({ pdfToHtml }) => registerImporter(['pdf'], pdfToHtml))
 ```
 
 Versi `<script>` mendaftarkan dirinya otomatis ke `window.DocEditor`.
