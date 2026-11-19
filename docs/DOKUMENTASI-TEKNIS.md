@@ -106,13 +106,15 @@ Hasil build di `dist/`:
 | `doc-editor.js` | `import` (ESM, bundler/Next.js) | ± 496 KB |
 | `doc-editor-pdf.umd.js` | Plugin impor PDF untuk `<script>` | ± 517 KB |
 | `doc-editor-pdf.js` | Plugin impor PDF untuk `import` | ± 517 KB |
+| `doc-editor-<versi>.tgz` | Paket npm siap pasang (`npm install ./doc-editor-0.1.0.tgz`) | ± 2 MB |
 
 Plugin PDF bersifat opsional dan hanya perlu dimuat bila pengguna boleh mengimpor PDF.
 
 Cara mendistribusikan ke aplikasi lain, pilih salah satu:
 
 - Salin `dist/*.js` ke folder aset aplikasi (paling sederhana, cocok untuk PHP). `dist/` ikut di repo Git, jadi bisa diunduh tanpa build.
-- Pasang langsung dari Git: `npm install github:lordtetsu/WYSIWYG-Editor` (tambahkan `#v0.1.0` untuk versi tertentu setelah ada tag rilis).
+- Pasang dari file paket: salin `dist/doc-editor-<versi>.tgz` ke proyek (mis. `vendor/`), lalu `npm install ./vendor/doc-editor-0.1.0.tgz`. Tidak butuh akses GitHub/GitLab; commit file `.tgz` itu di proyek agar tim cukup menjalankan `npm install`. File ini dibuat ulang otomatis oleh `npm run build`.
+- Pasang langsung dari GitHub lewat HTTPS: `npm install https://github.com/lordtetsu/WYSIWYG-Editor/archive/refs/heads/main.tar.gz`. Untuk mengunci versi, ganti `refs/heads/main` dengan hash commit (mis. `c051c51`) atau `refs/tags/v0.1.0`. Bentuk `npm install github:…` atau `git+https://github.com/…` diubah npm menjadi SSH (port 22) dan gagal di jaringan yang memblokir port itu.
 - Pasang sebagai paket lokal: `npm install ../WYSIWYG_EDITOR` atau publikasikan ke registry npm internal. `package.json` sudah mengekspor `doc-editor` dan `doc-editor/pdf`.
 
 ## 4. Pemasangan di berbagai stack
@@ -159,7 +161,7 @@ const ed = DocEditor.create('#editor', {
 import { useEffect, useRef } from 'react'
 import { create } from 'doc-editor'
 // Opsional, impor PDF (lihat 4.5):
-// import { registerImporter } from 'doc-editor'; import { pdfToHtml } from 'doc-editor/pdf'; registerImporter(['pdf'], pdfToHtml)
+// di dalam useEffect: import('doc-editor/pdf').then(({ pdfToHtml }) => registerImporter(['pdf'], pdfToHtml))
 
 export default function Editor({ value, onSave }) {
   const ref = useRef(null)
@@ -181,8 +183,9 @@ Pola yang sama: panggil `create(el, opsi)` setelah elemen terpasang (`onMounted`
 
 ```js
 import { create, registerImporter } from 'doc-editor'
-import { pdfToHtml } from 'doc-editor/pdf'
-registerImporter(['pdf'], pdfToHtml)
+// Muat di browser saja (mis. di dalam useEffect). pdf.js butuh fitur browser dan gagal bila dimuat
+// saat render di server (SSR Next.js) atau di Node.js 20.
+import('doc-editor/pdf').then(({ pdfToHtml }) => registerImporter(['pdf'], pdfToHtml))
 ```
 
 Versi `<script>` mendaftarkan dirinya otomatis ke `window.DocEditor`.

@@ -7,29 +7,56 @@ WYSIWYG editor offline untuk aplikasi web apa pun (PHP, JS, Next.js, …). Fitur
 
 Hasil build berupa **satu file JS** (CSS sudah termasuk) yang tidak memanggil CDN, ditambah satu file opsional untuk impor PDF.
 
-- Contoh & konfigurator: [examples/offline.html](examples/offline.html). Jalankan `npm run build`, lalu buka file itu di browser.
+- Contoh & konfigurator: [examples/offline.html](examples/offline.html), buka langsung di browser.
 - Server AI & ekspor dari backend: [webserver/](webserver/README.md)
 - **Dokumentasi teknis lengkap** (pemasangan per stack, semua opsi & API, server, keamanan, pemecahan masalah): [docs/DOKUMENTASI-TEKNIS.md](docs/DOKUMENTASI-TEKNIS.md)
 - **Migrasi dari TinyMCE** (opsi, nama tombol, API, peristiwa, perbedaan): [docs/MIGRASI-TINYMCE.md](docs/MIGRASI-TINYMCE.md)
 - **Laporan riset** (latar belakang, pemilihan teknologi, hasil uji, keamanan, rekomendasi): [docs/LAPORAN-RISET.md](docs/LAPORAN-RISET.md)
 
+## Instalasi
+
+Library dibagikan sebagai satu file paket: **`doc-editor-<versi>.tgz`** (± 2 MB, ada di folder `dist/`). Pemasangan tidak membutuhkan internet selain registry npm.
+
+### Proyek npm (Next.js, React, Vue, Vite, …)
+
+1. Unduh `doc-editor-0.1.0.tgz`, lalu simpan di proyek Anda, misalnya di folder `vendor/`.
+2. Pasang:
+
+   ```bash
+   npm install ./vendor/doc-editor-0.1.0.tgz
+   ```
+
+   `package.json` proyek akan berisi `"doc-editor": "file:vendor/doc-editor-0.1.0.tgz"`. Simpan file `.tgz` itu bersama kode proyek, supaya anggota tim cukup menjalankan `npm install`.
+3. Pakai:
+
+   ```js
+   import { create, registerImporter } from 'doc-editor'
+
+   // Opsional, impor PDF: muat plugin di browser saja (mis. di dalam useEffect), bukan di bagian atas file,
+   // karena pdf.js tidak bisa berjalan saat render di server (SSR Next.js).
+   import('doc-editor/pdf').then(({ pdfToHtml }) => registerImporter(['pdf'], pdfToHtml))
+   ```
+
+Untuk versi baru, ganti file `.tgz` di `vendor/`, lalu jalankan `npm install ./vendor/doc-editor-<versi-baru>.tgz`.
+
+### Halaman biasa / PHP (`<script>`)
+
+Ambil file JS siap pakai dari dalam paket:
+
 ```bash
-npm install
-npm run build   # dist/doc-editor.umd.js (<script>), dist/doc-editor.js (import), dist/doc-editor-pdf*.js (opsional, impor PDF)
-npm test        # tes library (28 tes)
-cd webserver && node --test   # tes server AI & ekspor (14 tes)
+tar -xzf doc-editor-0.1.0.tgz package/dist/doc-editor.umd.js package/dist/doc-editor-pdf.umd.js
+# hasil: package/dist/doc-editor.umd.js (wajib) dan package/dist/doc-editor-pdf.umd.js (opsional, impor PDF)
 ```
 
-[CHANGELOG.md](CHANGELOG.md) diperbarui otomatis dari pesan commit oleh hook `.githooks/post-commit` (aktif setelah `npm install`). Awali pesan commit dengan *Tambah…*, *Perbaiki…*, *Hapus…*, atau lainnya (masuk *Diubah*). Rilis = tag `vX.Y.Z`.
+Salin ke folder aset aplikasi (mis. `public/assets/`), lalu muat dengan `<script src="/assets/doc-editor.umd.js"></script>`.
 
-Pasang di proyek npm (Next.js dll.) langsung dari Git: `npm install github:lordtetsu/WYSIWYG-Editor`. `dist/` ikut di repo, jadi aplikasi PHP cukup mengunduh `dist/doc-editor.umd.js`.
+| File di dalam paket | Pakai untuk | Ukuran gzip |
+|---|---|---|
+| `dist/doc-editor.umd.js` | `<script>` biasa → global `DocEditor` (dan `tinymce`) | ± 496 KB |
+| `dist/doc-editor.js` | `import` (ESM) | ± 496 KB |
+| `dist/doc-editor-pdf.umd.js` / `dist/doc-editor-pdf.js` | Opsional: impor PDF | ± 517 KB |
 
-Prasyarat: Node.js 20.12+. Ekspor dari backend juga memerlukan Chrome/Chromium di server.
-
-| File hasil build | Ukuran gzip |
-|---|---|
-| `dist/doc-editor.umd.js` / `dist/doc-editor.js` | ± 496 KB |
-| `dist/doc-editor-pdf.umd.js` / `dist/doc-editor-pdf.js` (opsional) | ± 517 KB |
+Prasyarat ekspor dari backend: Node.js 20.12+ dan Chrome/Chromium di server (lihat [webserver/](webserver/README.md)).
 
 ## Pindah dari TinyMCE
 
@@ -59,8 +86,8 @@ Opsi, tombol, API, dan peristiwa yang didukung ada di [docs/MIGRASI-TINYMCE.md](
 ```
 
 - **Form biasa (PHP dll.):** jika target berupa `<textarea>`, nilainya otomatis berisi HTML editor.
-- **Next.js:** panggil `create()` di `useEffect` pada komponen `'use client'`, dan `destroy()` saat unmount.
-- **Impor PDF:** muat juga `doc-editor-pdf.umd.js` setelah library utama (dengan `import`: `registerImporter(['pdf'], pdfToHtml)` dari `doc-editor/pdf`).
+- **Next.js:** panggil `create()` di `useEffect` pada komponen `'use client'`, dan `destroy()` saat unmount. Contoh lengkap di [dokumentasi teknis](docs/DOKUMENTASI-TEKNIS.md#43-nextjs--react).
+- **Impor PDF:** muat juga `doc-editor-pdf.umd.js` setelah library utama. Dengan `import`, muat `doc-editor/pdf` secara dinamis di browser (lihat Instalasi).
 
 Contoh lengkap per stack ada di [dokumentasi teknis](docs/DOKUMENTASI-TEKNIS.md#4-pemasangan-di-berbagai-stack).
 
@@ -151,3 +178,12 @@ Contoh lengkap per stack ada di [dokumentasi teknis](docs/DOKUMENTASI-TEKNIS.md#
 - **Teruji di Chrome.** Browser lain belum diuji.
 
 Rincian di [dokumentasi teknis](docs/DOKUMENTASI-TEKNIS.md#18-batasan-yang-diketahui).
+
+## Pengembangan library
+
+```bash
+npm install
+npm run build   # dist/*.js + dist/doc-editor-<versi>.tgz
+npm test        # tes library (32 tes)
+cd webserver && node --test   # tes server AI & ekspor (14 tes)
+```
